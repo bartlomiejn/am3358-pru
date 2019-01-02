@@ -17,7 +17,7 @@
     - The missing disk name is your SD card - it should be something similar to `/dev/diskX`
     - Accompanying raw disk filename should be `/dev/rdiskX` where X is the same number from the step above
     - Make sure the number is right in order to not damage anything on your computer in following steps
-2. Download and setup Debian
+2. Download Debian
     - `wget https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz`
 3. Copy Debian to the SD card
     - Clear the card: `sudo dd if=/dev/zero of=/dev/rdiskX bs=8192`
@@ -25,9 +25,20 @@
     - Copy the image to the card: `xzcat bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz | sudo dd of=/dev/rdiskX`
 4. Insert the SD card into the card slot on the BBB
 5. While holding the boot button, which is the one next to the SD card slot, power it up using the Mini Type-B cable
-6. [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial)
-7. Connect to the BBB
+6. [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial), the pins that are of interest for you are J1_1, J1_4 and J1_5 which are GND, RX and TX respectively
+7. Connect using:
     - `sudo screen /dev/tty.usbserial-* 115200`
     - Default credentials: `debian` / `temppwd`
+8. Setup the board:
+    - Edit `/boot/uEnv.txt`
+    - Set the DTB to `dtb=am335x-boneblack.dtb`
+    - Disable all overlays by setting all `disable_uboot_overlay_*=1` - like `disable_uboot_overlay_emmc=1`, `disable_uboot_overlay_audio=1` etc.
+    - In this distribution you should be on the 4.14.x kernel by default, but make sure by checking `sudo /opt/scripts/tools/version.sh | grep kernel`
+    - Under `PRUSS OPTIONS` comment all `uboot_overlay_pru` **except for the `4.14.x-ti kernel` one**, this should stay uncommented
+    - Save the file and `sudo reboot`
+9. Clone this repository and the PRU development package into the `home` directory: 
+    - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch; git clone https://github.com/beagleboard/am335x_pru_package`
+10. Build and setup `libprussdrv`:
+    - `~/am335x_pru_package/pru_sw/app_loader/interface/CROSS_COMPILE= make; cp ~/am335x_pru_package/pru_sw/app_loader/lib /usr/lib; ldconfig`
 
 (Further steps will be added here)
