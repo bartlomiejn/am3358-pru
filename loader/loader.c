@@ -1,3 +1,14 @@
+// Loads a PRU text.bin (and optionally data.bin) file,
+// executes it, and waits for completion.
+//
+// Usage:
+// $ ./loader text.bin [data.bin]
+// 
+// Compile with:
+// gcc -o loader loader.c -lprussdrv
+//
+// Based on https://credentiality2.blogspot.com/2015/09/beaglebone-pru-gpio-example.html
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <prussdrv.h>
