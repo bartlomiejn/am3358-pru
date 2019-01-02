@@ -4,7 +4,7 @@
 - This project uses `BeagleBone Black rev C` with `Debian 9.5 2018-10-07 4GB SD IOT`
 - Three cables are required:
     - Ethernet
-    - FTDI to TTL ([like the one here](https://www.ftdichip.com/Support/Documents/DataSheets/Cables/DS_TTL-232R_RPi.pdf))
+    - FTDI to TTL [like the one here](https://www.ftdichip.com/Support/Documents/DataSheets/Cables/DS_TTL-232R_RPi.pdf)
     - USB Mini Type-B to Type-A cable
 - An SD card of at least 4GB size
 
@@ -24,7 +24,7 @@
     - Copy the image to the card: `xzcat bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz | sudo dd of=/dev/rdiskX`
 4. Insert the SD card into the card slot on the BBB
 5. While holding the boot button, power it up using the Mini Type-B cable
-6. [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial), the pins that are of interest for you are J1_1, J1_4 and J1_5 which are GND, RX and TX respectively
+6. [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial), the pins that are of interest to you are J1_1, J1_4 and J1_5 which are GND, RX and TX respectively
 7. Connect using:
     - `sudo screen /dev/tty.usbserial-* 115200`
     - Default credentials: `debian` / `temppwd`
