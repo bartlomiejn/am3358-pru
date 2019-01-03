@@ -30,9 +30,9 @@
     - Default credentials: `debian` / `temppwd`
 8. Clone this repository into the `home` directory and build the dtb overlay: 
     - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; make`
-9. Copy the overlay to the bootloader dtbs catalog:
+9. Copy the overlay to the firmware directory:
     - Find your kernel version first by using `sudo /opt/scripts/tools/version.sh | grep kernel`
-    - `cp output/am335x-boneblack-pru-stopwatch-overlay.dtb /boot/dtbs/{Kernel version}`
+    - `cp output/AM335X-PRU-STOPWATCH.dtbo /lib/firmware/`
 10. Setup the bootloader:
     - Edit `/boot/uEnv.txt`
     - Set the DTB to `dtb=am335x-boneblack.dtb`
