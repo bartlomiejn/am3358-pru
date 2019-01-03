@@ -35,9 +35,7 @@
     - In this distribution you should be on the 4.14.x kernel by default, but make sure by checking `sudo /opt/scripts/tools/version.sh | grep kernel`
     - Under `PRUSS OPTIONS` comment all `uboot_overlay_pru` except for the `(4.14.x-ti kernel)` one which should stay uncommented
     - Save the file and `sudo reboot`
-9. Clone this repository and the AM335x PRU package into the `home` directory: 
-    - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch; git clone https://github.com/beagleboard/am335x_pru_package`
-10. Build and setup `libprussdrv`:
-    - `~/am335x_pru_package/pru_sw/app_loader/interface/CROSS_COMPILE= make; cp ~/am335x_pru_package/pru_sw/app_loader/lib /usr/lib; ldconfig`
+9. Clone this repository into the `home` directory: 
+    - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch`
 
 (Further steps will be added here)
