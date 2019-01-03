@@ -31,7 +31,6 @@
 8. Clone this repository into the `home` directory and build the dtb overlay: 
     - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; make`
 9. Copy the overlay to the firmware directory:
-    - Find your kernel version first by using `sudo /opt/scripts/tools/version.sh | grep kernel`
     - `cp output/AM335X-PRU-STOPWATCH.dtbo /lib/firmware/`
 10. Setup the bootloader:
     - Edit `/boot/uEnv.txt`
