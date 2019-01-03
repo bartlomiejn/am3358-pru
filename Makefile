@@ -1,8 +1,8 @@
 DTC=dtc
 INPUT_TYPE=dts
 OUTPUT_TYPE=dtb
-INPUT_FILE=dtso/am335x-boneblack-pru-stopwatch-overlay.dts
-OUTPUT_FILE=output/am335x-boneblack-pru-stopwatch-overlay.dtb
+INPUT_FILE=dtso/AM335X-PRU-STOPWATCH.dtso
+OUTPUT_FILE=output/AM335X-PRU-STOPWATCH.dtbo
 
 dtbs: $(DTS_FILE)
 	mkdir -p output
