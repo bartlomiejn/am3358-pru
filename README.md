@@ -28,14 +28,16 @@
 7. Connect using:
     - `sudo screen /dev/tty.usbserial-* 115200`
     - Default credentials: `debian` / `temppwd`
-8. Setup the board:
+8. Clone this repository into the `home` directory and build the dtb overlay: 
+    - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; make`
+9. Copy the overlay to the bootloader dtbs catalog:
+    - Find your kernel version first by using `sudo /opt/scripts/tools/version.sh | grep kernel`
+    - `cp output/am335x-boneblack-pru-stopwatch-overlay.dtb /boot/dtbs/{Kernel version}`
+10. Setup the bootloader:
     - Edit `/boot/uEnv.txt`
     - Set the DTB to `dtb=am335x-boneblack.dtb`
-    - Disable all overlays by setting all `disable_uboot_overlay_*=1` - like `disable_uboot_overlay_emmc=1`, `disable_uboot_overlay_audio=1` etc.
-    - In this distribution you should be on the 4.14.x kernel by default, but make sure by checking `sudo /opt/scripts/tools/version.sh | grep kernel`
+    - Disable all overlays by setting all `disable_uboot_overlay_*` properties to 1 - `disable_uboot_overlay_emmc=1`, `disable_uboot_overlay_audio=1` etc.
     - Under `PRUSS OPTIONS` comment all `uboot_overlay_pru` except for the `(4.14.x-ti kernel)` one which should stay uncommented
     - Save the file and `sudo reboot`
-9. Clone this repository into the `home` directory: 
-    - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch`
 
 (Further steps will be added here)
