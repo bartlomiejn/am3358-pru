@@ -2,29 +2,19 @@
 /plugin/;
 / {
     compatible = "ti,beaglebone", "ti,beaglebone-black";
-    part-number = "PRU-stopwatch-pin-config";
+    part-number = "pru-stopwatch-pinmux-P8-config";
     version = "00A0";
-
-    // Resources used by the overlay
-    exclusive-use = "P9.27", "P9.28";
-
-    // The PRU pin modes
-    pru_pru_pins: pinmux_pru_pru_pins {
-        pinctrl-single,pins = <
-            0x1a4 0x05 // P9_27 / pr1_pru0_pru_r30_5 - Mode 5 output pull‐down
-            0x19c 0x26 // P9_28 / pr1_pru0_pru_r31_3 - Mode 6 input  pull‐down
-        >;
-    };
-
-    // Enable the GPIOs
+    exclusive-use = "P8.11", "P8.15", "P8.20", "P8.21";
     fragment@0 {
-        target = <&ocp>;
+        target = <&am33xx_pinmux>;
         __overlay__ {
-            gpio_helper {
-                compatible = "gpio-of-helper";
-                status = "okay";
-                pinctrl-names = "default";
-                pinctrl-0 = <&gpio_pins>;
+            pru_stopwatch_pinmux_P8_pins {
+                pinctrl-single,pins = <
+                    0x034 0x06 // P8_11 pr1_pru0_pru_r30_15 Output, pulldown, Mode 6
+                    0x030 0x26 // P8_15 pr1_pru0_pru_r31_15 Input, pulldown, Mode 6
+                    0x084 0x05 // P8_20 pr1_pru1_pru_r30_13 Output, pulldown, Mode 5
+                    0x080 0x26 // P8_21 pr1_pru1_pru_r31_12 Input, pulldown, Mode 6
+                >;
             };
         };
     };
