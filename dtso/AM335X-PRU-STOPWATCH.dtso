@@ -2,20 +2,18 @@
 /plugin/;
 / {
     compatible = "ti,beaglebone", "ti,beaglebone-black";
-    part-number = "pru-stopwatch-pinmux-P8-config";
+    part-number = "AM335X-PRU-STOPWATCH";
     version = "00A0";
     exclusive-use = "P8.11", "P8.15", "P8.20", "P8.21";
     fragment@0 {
-        target = <&am33xx_pinmux>;
+        target = <&pruss>;
         __overlay__ {
-            pru_stopwatch_pinmux_P8_pins {
-                pinctrl-single,pins = <
-                    0x034 0x06 // P8_11 pr1_pru0_pru_r30_15 Output, pulldown, Mode 6
-                    0x030 0x26 // P8_15 pr1_pru0_pru_r31_15 Input, pulldown, Mode 6
-                    0x084 0x05 // P8_20 pr1_pru1_pru_r30_13 Output, pulldown, Mode 5
-                    0x080 0x26 // P8_21 pr1_pru1_pru_r31_12 Input, pulldown, Mode 6
-                >;
-            };
+            pinctrl-names = "default";
+            pinctrl-0 = <&pinmux_P8_11_pruout_pin>;
+            pinctrl-0 = <&pinmux_P8_15_pruin_pin>;
+            pinctrl-0 = <&pinmux_P8_28_pruout_pin>;
+            pinctrl-0 = <&pinmux_P8_29_pruin_pin>;
+            status = "okay";
         };
     };
 };
