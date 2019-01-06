@@ -943,18 +943,22 @@
 
 					pinmux_P8_11_pruout_pin {
 						pinctrl-single,pins = <0x034 0x26>;
+						phandle = <1234>;
 					};
 
 					pinmux_P8_15_pruin_pin {
 						pinctrl-single,pins = <0x03c 0x26>;
+						phandle = <1235>;
 					};
 
 					pinmux_P8_28_pruout_pin {
 						pinctrl-single,pins = <0x0e8 0x05>;
+						phandle = <1236>;
 					};
 
 					pinmux_P8_29_pruin_pin {
 						pinctrl-single,pins = <0x0e4 0x26>;
+						phandle = <1237>;
 					};
 
 					nxp_hdmi_bonelt_pins {
@@ -2059,10 +2063,10 @@
 				status = "okay";
 				phandle = <0xe0>;
 				pinctrl-names = "default";
-				pinctrl-0 = <&pinmux_P8_11_pruout_pin>;
-				pinctrl-1 = <&pinmux_P8_15_pruin_pin>;
-				pinctrl-2 = <&pinmux_P8_28_pruout_pin>;
-				pinctrl-3 = <&pinmux_P8_29_pruin_pin>;
+				pinctrl-0 = <1234>;
+				pinctrl-1 = <1235>;
+				pinctrl-2 = <1236>;
+				pinctrl-3 = <1237>;
 
 				memories@0 {
 					reg = <0x0 0x2000 0x2000 0x2000 0x10000 0x3000>;
