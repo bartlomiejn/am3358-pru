@@ -18,7 +18,7 @@ inline bool ui32_get_nth_bit(uint32_t from, int n)
     return (from >> n) & 1;
 }
 
-inline void ui32_set_nth_bit(uint32_t *source, int n, int to)
+inline void ui32_set_nth_bit(volatile uint32_t *source, int n, int to)
 {
     *source = (source & (~(1 << n))) | (to << n);
 }
