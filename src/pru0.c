@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include "binary.h"
 
 volatile register uint32_t __R30;

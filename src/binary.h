@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #define BINARY(x) string_to_binary_(#x)
 
 static inline unsigned long long string_to_binary_(const char *s)
@@ -18,5 +20,5 @@ inline bool ui32_get_nth_bit(uint32_t from, int n)
 
 inline void ui32_set_nth_bit(uint32_t *source, int n, int to)
 {
-    *source = (source & (~(1 << n))) | (to << n)
+    *source = (source & (~(1 << n))) | (to << n);
 }

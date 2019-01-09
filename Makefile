@@ -15,6 +15,6 @@ post_reboot:
 
 PHONY += build_sources
 build_sources:
-	clpru -fr=output $(C_SOURCES)
+	clpru -fr=output --c99 $(C_SOURCES)
 
 .PHONY: $(PHONY)
