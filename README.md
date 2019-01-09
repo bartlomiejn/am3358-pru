@@ -31,6 +31,6 @@
 8. Clone this repository into the `home` directory and build the dtb overlay: 
     - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch;
 9. Run `cd ~/pru-stopwatch; sudo make pre_reboot; sudo reboot`
-10. After reboot, continue with `cd ~/pru-stopwatch; make post_reboot`
+10. After reboot, continue with `cd ~/pru-stopwatch; sudo make post_reboot`
 
 (Further steps will be added here)
