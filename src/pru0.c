@@ -4,17 +4,12 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-// P8_15 pr1_pru0_pru_r31_15 Input, Pulldown, Mode 6
-// P8_21 pr1_pru1_pru_r31_12 Input, Pulldown, Mode 6
-// P8_11 pr1_pru0_pru_r30_15 Output, Pulldown, Mode 6
-// P8_20 pr1_pru1_pru_r30_13 Output, Pulldown, Mode 5
-
-inline bool get_P8_15() // P8_21 input
+inline bool get_P8_15()
 {
     return ui32_get_nth_bit(__R31, 15);
 }
 
-inline bool get_P8_21() // P8_15 input
+inline bool get_P8_21()
 {
     return ui32_get_nth_bit(__R31, 12);
 }
