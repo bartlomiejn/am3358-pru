@@ -1,14 +1,14 @@
-DTC=dtc
-INPUT_TYPE=dts
-OUTPUT_TYPE=dtb
-INPUT_FILE=dtbs/AM335X-PRU-STOPWATCH.dtso
-OUTPUT_FILE=output/AM335X-PRU-STOPWATCH.dtbo
+PHONY := pre_reboot
+pre_reboot:
+	@if ! [ "$(shell id -u)" = 0 ];then
+    	@echo "You are not root, run as root please"
+    	exit 1
+	fi
+	cp /setup/uboot/uEnv.txt /boot/
+	reboot
 
-.PHONY: dtbs clean
+PHONY += post_reboot
+post_reboot:
+	sh /setup/post_reboot.sh
 
-dtbs: $(DTS_FILE)
-	mkdir -p output
-	$(DTC) -@ -I $(INPUT_TYPE) -O $(OUTPUT_TYPE) -o $(OUTPUT_FILE) $(INPUT_FILE)
-
-clean:
-	rm * output
+.PHONY: $(PHONY)
