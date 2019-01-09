@@ -1,6 +1,6 @@
-PHONY := pre_reboot
 C_SOURCES = src/pru0.c
 
+PHONY := pre_reboot
 pre_reboot:
 	ifneq ($(EUID),0)
 		@echo "Please run as root user"
