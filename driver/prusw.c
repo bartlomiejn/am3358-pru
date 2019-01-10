@@ -39,7 +39,7 @@ static int __init prusw_init(void)
 {
     printk(KERN_INFO "prusw: Initializing\n");
     major_number = register_chrdev(0, DEVICE_NAME, &fops);
-    if (major_number < 0) 
+    if (major_number < 0)
     {
         printk(KERN_ALERT "prusw: Failed to register a major number\n");
         return major_number;
@@ -47,7 +47,7 @@ static int __init prusw_init(void)
     printk(KERN_INFO "prusw: Registered with major number: %d\n", major_number);
 
     prusw_class = class_create(THIS_MODULE, CLASS_NAME);
-    if (IS_ERR(prusw_class)) 
+    if (IS_ERR(prusw_class))
     {
         unregister_chrdev(major_number, DEVICE_NAME);
         printk(KERN_ALERT "prusw: Failed to register device class\n");
@@ -56,9 +56,9 @@ static int __init prusw_init(void)
     printk(KERN_INFO "prusw: Device class registered\n");
 
     prusw_device = device_create(
-        prusw_class, 
-        NULL, 
-        MKDEV(major_number, 0), 
+        prusw_class,
+        NULL,
+        MKDEV(major_number, 0),
         NULL,
         DEVICE_NAME
     );
@@ -94,19 +94,19 @@ static int dev_open(struct inode *inodep, struct file *filep)
 }
 
 static ssize_t dev_read(
-    struct file *filep, 
-    char *buffer, 
-    size_t len, 
+    struct file *filep,
+    char *buffer,
+    size_t len,
     loff_t *offset
 ){
     int errcount = 0;
-    errcount = copy_to_user(buffer, message, message_sz);    
+    errcount = copy_to_user(buffer, message, message_sz);
     if (errcount==0)
     {
         printk(KERN_INFO "prusw: Sent %d characters\n", message_sz);
         return (message_sz=0);
-    } 
-    else 
+    }
+    else
     {
         printk(KERN_INFO "prusw: Failed to send %d characters\n", errcount);
         return -EFAULT;
@@ -114,12 +114,12 @@ static ssize_t dev_read(
 }
 
 static ssize_t dev_write(
-    struct file *filep, 
-    const char *buffer, 
-    size_t len, 
+    struct file *filep,
+    const char *buffer,
+    size_t len,
     loff_t *offset
 ){
-    sprintf(message, "%s(%zu letters)", buffer, len);
+    message = buffer;
     message_sz = strlen(message);
     printk(KERN_INFO "prusw: Received %zu characters\n", len);
     return len;
