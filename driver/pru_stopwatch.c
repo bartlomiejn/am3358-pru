@@ -11,16 +11,16 @@ static char *name = "test";
 module_param(name, charp, S_IRUGO);
 MODULE_PARM_DESC(name, "Test parameter");
 
-static int __init prumodule_init(void)
+static int __init pru_sw_init(void)
 {
     printk(KERN_INFO "%s: init\n", name);
     return 0;
 }
 
-static void __exit prumodule_exit(void)
+static void __exit pru_sw_exit(void)
 {
     printk(KERN_INFO "%s: exit\n", name);
 }
 
-module_init(prumodule_init);
-module_exit(prumodule_exit);
+module_init(pru_sw_init);
+module_exit(pru_sw_exit);

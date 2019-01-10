@@ -16,16 +16,20 @@ post_reboot:
 	sudo apt-get install linux-headers-$(shell uname -r)
 
 FIRMWARE_SRC = firmware/pru0.c
-PHONY += build_firmware
-build_firmware:
+PHONY += setup_firmware
+setup_firmware:
 	clpru -fr=output --c99 $(FIRMWARE_SRC)
+	# TODO: Loading of firmware
 
-PHONY += load_firmware
-load_firmware:
-	# TODO: Move obj to firmware, load firmware
-
-PHONY += build_module
-build_module:
+DRIVER_KO = pru_stopwatch.ko
+PHONY += setup_driver
+setup_driver:
 	cd module && $(MAKE)
+	sudo insmod $(DRIVER_KO)
+
+PHONY += remove_driver
+remove_driver:
+	sudo rmmod $(DRIVER_KO)
+	cd module && $(MAKE) clean
 
 .PHONY: $(PHONY)

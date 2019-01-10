@@ -8,3 +8,5 @@ driver/*.mod.c
 driver/*.o
 dirver/*.mod.o
 driver/.tmp_versions
+driver/*.ko.cmd
+driver/*.o.cmd
