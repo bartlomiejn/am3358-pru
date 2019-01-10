@@ -1,6 +1,6 @@
 K_DIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
-obj-m += pru_stopwatch.o
+obj-m += prusw.o
 
 all:
 	mkdir -p $(K_DIR)
