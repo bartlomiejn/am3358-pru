@@ -5,26 +5,26 @@
 #include <linux/fs.h>
 
 #define DEVICE_NAME "pru_stopwatch"
-#define CLASS_NAME 	"pru_sw"
+#define CLASS_NAME "pru_sw"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Bartlomiej Nowak");
 MODULE_DESCRIPTION("Character device driver for AM335x pru-stopwatch firmware");
 MODULE_VERSION("0.1");
 
-static int 	    majorNumber;
-static char 	message[256] = { 0 };
-static short 	size_of_message;
-static int 	    numberOpens = 0;
-static struct 	class* 	prusw_class = NULL;
-static struct 	device* prusw_device = NULL;
+static int major_number;
+static char message[256] = { 0 };
+static short message_sz;
+static int numberOpens = 0;
+static struct class* prusw_class = NULL;
+static struct device* prusw_device = NULL;
 
-static int 	    dev_open(struct inode *, struct file *);
-static int 	    dev_release(struct inode *, struct file *);
-static ssize_t 	dev_read(struct file *, char *, size_t, loff_t *);
-static ssize_t 	dev_write(struct file *, const char *, size_t, loff_t *);
+static int dev_open(struct inode *, struct file *);
+static int dev_release(struct inode *, struct file *);
+static ssize_t dev_read(struct file *, char *, size_t, loff_t *);
+static ssize_t dev_write(struct file *, const char *, size_t, loff_t *);
 
-static struct	file_operations fops =
+static struct file_operations fops =
 {
     .open = dev_open,
     .read = dev_read,
@@ -92,11 +92,11 @@ static ssize_t dev_read(
     loff_t *offset
 ){
     int errcount = 0;
-    errcount = copy_to_user(buffer, message, size_of_message);    
+    errcount = copy_to_user(buffer, message, message_sz);    
     if (errcount==0)
     {
-        printk(KERN_INFO "prusw: Sent %d characters\n", size_of_message);
-        return (size_of_message=0);
+        printk(KERN_INFO "prusw: Sent %d characters\n", message_sz);
+        return (message_sz=0);
     } 
     else 
     {
@@ -112,7 +112,7 @@ static ssize_t dev_write(
     loff_t *offset
 ){
     sprintf(message, "%s(%zu letters)", buffer, len);
-    size_of_message = strlen(message);
+    message_sz = strlen(message);
     printk(KERN_INFO "prusw: Received %zu characters\n", len);
     return len;
 }
