@@ -71,7 +71,7 @@ static int __init prusw_init(void)
     }
     printk(KERN_INFO "prusw: Device class created\n");
 
-	mutex_init(&prusw_mutex);
+    mutex_init(&prusw_mutex);
 
     return 0;
 }
@@ -82,7 +82,7 @@ static void __exit prusw_exit(void)
     class_unregister(prusw_class);
     class_destroy(prusw_class);
     unregister_chrdev(major_number, DEVICE_NAME);
-	mutex_destroy(&prusw_mutex);
+    mutex_destroy(&prusw_mutex);
     printk(KERN_INFO "prusw: Exiting\n");
 }
 
@@ -90,11 +90,11 @@ static void __exit prusw_exit(void)
 
 static int dev_open(struct inode *inodep, struct file *filep)
 {
-	if (!mutex_trylock(&prusw_mutex))
-	{
-		printk(KERN_ALERT "prusw: Device in use by another process");
-		return -EBUSY;
-	}
+    if (!mutex_trylock(&prusw_mutex))
+    {
+        printk(KERN_ALERT "prusw: Device in use by another process");
+        return -EBUSY;
+    }
     printk(KERN_INFO "prusw: Device opened\n");
     return 0;
 }
@@ -105,24 +105,24 @@ static ssize_t dev_read(
     size_t len,
     loff_t *offset
 ){
-	const char* test_msg = "prusw output test\n";
-	size_t test_msg_sz = strlen(test_msg);
+    const char* test_msg = "prusw output test\n";
+    size_t test_msg_sz = strlen(test_msg);
     size_t count = len;
     ssize_t retval = 0;
-	unsigned long ret = 0;
-	if (*offset >= test_msg_sz)
-	{
-		return retval;
-	}
-	if (*offset + len > test_msg_sz)
-	{
-		count = test_msg_sz - *offset;
-	}
-	ret = copy_to_user(buffer, test_msg, count);
-	*offset += count - ret;
-	retval = count - ret;
-	printk(KERN_INFO "prusw: Sent %d characters\n", count);
-	return retval;
+    unsigned long ret = 0;
+    if (*offset >= test_msg_sz)
+    {
+        return retval;
+    }
+    if (*offset + len > test_msg_sz)
+    {
+        count = test_msg_sz - *offset;
+    }
+    ret = copy_to_user(buffer, test_msg, count);
+    *offset += count - ret;
+    retval = count - ret;
+    printk(KERN_INFO "prusw: Sent %d characters\n", count);
+    return retval;
 }
 
 static ssize_t dev_write(
@@ -131,13 +131,13 @@ static ssize_t dev_write(
     size_t len,
     loff_t *offset
 ){
-	printk(KERN_INFO "prusw: Operation unsupported");
-	return -EINVAL;
+    printk(KERN_INFO "prusw: Operation unsupported");
+    return -EINVAL;
 }
 
 static int dev_release(struct inode *inodep, struct file *filep)
 {
-	mutex_unlock(&prusw_mutex);
+    mutex_unlock(&prusw_mutex);
     printk(KERN_INFO "prusw: Device closed\n");
     return 0;
 }
