@@ -1,4 +1,4 @@
-C_SOURCES = src/pru0.c
+FIRMWARE_SRC = firmware/pru0.c
 
 PHONY := pre_reboot
 pre_reboot:
@@ -14,9 +14,9 @@ post_reboot:
 	$(MAKE) build_sources
 	$(MAKE) load_firmware
 
-PHONY += build_sources
-build_sources:
-	clpru -fr=output --c99 $(C_SOURCES)
+PHONY += build_firmware
+build_firmware:
+	clpru -fr=output --c99 $(FIRMWARE_SRC)
 
 PHONY += load_firmware
 load_firmware:
