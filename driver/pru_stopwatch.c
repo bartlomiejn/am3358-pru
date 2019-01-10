@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
+#include <linux/uaccess.h>
 #include <linux/fs.h>
 
 #define DEVICE_NAME "pru_stopwatch"
@@ -15,7 +16,7 @@ MODULE_VERSION("0.1");
 static int major_number;
 static char message[256] = { 0 };
 static short message_sz;
-static int numberOpens = 0;
+static int open_count = 0;
 static struct class* prusw_class = NULL;
 static struct device* prusw_device = NULL;
 
@@ -80,10 +81,17 @@ static void __exit prusw_exit(void)
     class_unregister(prusw_class);
     class_destroy(prusw_class);
     unregister_chrdev(major_number, DEVICE_NAME);
-    printk(KERN_INFO "prusw: Exiting\n", name);
+    printk(KERN_INFO "prusw: Exiting\n");
 }
 
 // File operations
+
+static int dev_open(struct inode *inodep, struct file *filep)
+{
+    open_count++;
+    printk(KERN_INFO "prusw: Device opened %d times\n", open_count);
+    return 0;
+}
 
 static ssize_t dev_read(
     struct file *filep, 
@@ -101,7 +109,7 @@ static ssize_t dev_read(
     else 
     {
         printk(KERN_INFO "prusw: Failed to send %d characters\n", errcount);
-        return -EFAULT
+        return -EFAULT;
     }
 }
 
