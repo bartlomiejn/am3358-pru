@@ -15,9 +15,6 @@ MODULE_DESCRIPTION("Character device driver for AM335x pru-stopwatch firmware");
 MODULE_VERSION("0.1");
 
 static int major_number;
-static char message[256] = { 0 };
-static short message_sz;
-static int open_count = 0;
 static struct class* prusw_class = NULL;
 static struct device* prusw_device = NULL;
 static DEFINE_MUTEX(prusw_mutex);
@@ -98,8 +95,7 @@ static int dev_open(struct inode *inodep, struct file *filep)
 		printk(KERN_ALERT "prusw: Device in use by another process");
 		return -EBUSY;
 	}
-    open_count++;
-    printk(KERN_INFO "prusw: Device opened %d times\n", open_count);
+    printk(KERN_INFO "prusw: Device opened\n");
     return 0;
 }
 
@@ -109,18 +105,17 @@ static ssize_t dev_read(
     size_t len,
     loff_t *offset
 ){
-    int errcount = 0;
-    errcount = copy_to_user(buffer, message, message_sz);
-    if (errcount==0)
+    int copy_err = 0;
+	const char* test_msg = "This is a test";
+	size_t test_msg_sz = sizeof(char)*strlen(test_msg);
+    copy_err = copy_to_user(buffer, test_msg, test_msg_sz);
+    if (copy_err != 0)
     {
-        printk(KERN_INFO "prusw: Sent %d characters\n", message_sz);
-        return (message_sz=0);
-    }
-    else
-    {
-        printk(KERN_INFO "prusw: Failed to send %d characters\n", errcount);
+        printk(KERN_INFO "prusw: Failed to send %d characters\n", test_msg_sz);
         return -EFAULT;
     }
+	printk(KERN_INFO "prusw: Sent %d characters\n", test_msg_sz);
+	return 0;
 }
 
 static ssize_t dev_write(
@@ -129,19 +124,14 @@ static ssize_t dev_write(
     size_t len,
     loff_t *offset
 ){
-    if (copy_from_user(message, buffer, sizeof(char)*len) != 0) 
-    {
-        return -EFAULT;
-    }
-    strncpy(message, buffer, len > 255 ? 255 : len);
-    printk(KERN_INFO "prusw: Received %zu characters\n", len);
-    return len;
+	print(KERN_INFO "prusw: Operation unsupported");
+	return -EINVAL;
 }
 
 static int dev_release(struct inode *inodep, struct file *filep)
 {
 	mutex_unlock(&prusw_mutex);
-    printk(KERN_INFO "prusw: Device successfully closed\n");
+    printk(KERN_INFO "prusw: Device closed\n");
     return 0;
 }
 
