@@ -124,7 +124,7 @@ static ssize_t dev_write(
     size_t len,
     loff_t *offset
 ){
-	print(KERN_INFO "prusw: Operation unsupported");
+	printk(KERN_INFO "prusw: Operation unsupported");
 	return -EINVAL;
 }
 
