@@ -5,8 +5,8 @@
 #include <linux/uaccess.h>
 #include <linux/fs.h>
 
-#define DEVICE_NAME "pru_stopwatch"
-#define CLASS_NAME "pru_sw"
+#define DEVICE_NAME "prusw"
+#define CLASS_NAME "prusw"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Bartlomiej Nowak");
