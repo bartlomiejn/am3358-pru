@@ -8,15 +8,16 @@ MODULE_DESCRIPTION("Driver for AM335x PRU");
 MODULE_VERSION("0.1");
 
 static char *name = "test";
-module_param(time, charp, S_IRUGO);
-MODULE_PARAM_DESC(time, "Test parameter")
+module_param(name, charp, S_IRUGO);
+MODULE_PARM_DESC(name, "Test parameter");
 
-static int __init prumodule_init()
+static int __init prumodule_init(void)
 {
     printk(KERN_INFO "%s: init\n", name);
+    return 0;
 }
 
-static void __exit prumodule_exit()
+static void __exit prumodule_exit(void)
 {
     printk(KERN_INFO "%s: exit\n", name);
 }

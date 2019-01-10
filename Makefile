@@ -12,8 +12,8 @@ POST_REBOOT = setup/post_reboot.sh
 PHONY += post_reboot
 post_reboot:
 	sh $(POST_REBOOT)
-	$(MAKE) build_sources
-	$(MAKE) load_firmware
+	sudo apt-get update
+	sudo apt-get install linux-headers-$(shell uname -r)
 
 FIRMWARE_SRC = firmware/pru0.c
 PHONY += build_firmware
