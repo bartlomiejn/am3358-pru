@@ -18,12 +18,12 @@ inline bool get_P8_21()
 
 inline void set_P8_11(bool value)
 {
-    ui32_set_nth_bit(&__R30, 15, (int)value);
+    r32_set_nth_bit(&__R30, 15, (int)value);
 }
 
 inline void set_P8_20(bool value)
 {
-    ui32_set_nth_bit(&__R30, 13, (int)value);
+    r32_set_nth_bit(&__R30, 13, (int)value);
 }
 
 inline void reset_cycle_count()
@@ -49,7 +49,7 @@ int main(void)
     {
         if (get_P8_15() != last_p8_15)
         {
-            // TODO: Outputing cycle count
+            // TODO: Outputing cycle count / time
         }
     }
     __halt();
