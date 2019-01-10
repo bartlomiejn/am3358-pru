@@ -1,0 +1,2 @@
+# Rules file for the prusw device driver
+KERNEL=="prusw", SUBSYSTEM=="prusw", MODE="0666"

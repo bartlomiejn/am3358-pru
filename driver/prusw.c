@@ -119,6 +119,10 @@ static ssize_t dev_write(
     size_t len,
     loff_t *offset
 ){
+    if (copy_from_user(message, buffer, sizeof(char)*len) != 0) 
+    {
+        return -EFAULT;
+    }
     strncpy(message, buffer, len > 255 ? 255 : len);
     printk(KERN_INFO "prusw: Received %zu characters\n", len);
     return len;
