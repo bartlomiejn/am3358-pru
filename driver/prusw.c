@@ -4,6 +4,7 @@
 #include <linux/device.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
+#include <linux/mutex.h>
 
 #define DEVICE_NAME "prusw"
 #define CLASS_NAME "prusw"
@@ -19,6 +20,7 @@ static short message_sz;
 static int open_count = 0;
 static struct class* prusw_class = NULL;
 static struct device* prusw_device = NULL;
+static DEFINE_MUTEX(prusw_mutex);
 
 static int dev_open(struct inode *, struct file *);
 static int dev_release(struct inode *, struct file *);
@@ -72,6 +74,8 @@ static int __init prusw_init(void)
     }
     printk(KERN_INFO "prusw: Device class created\n");
 
+	mutex_init(&prusw_mutex);
+
     return 0;
 }
 
@@ -81,6 +85,7 @@ static void __exit prusw_exit(void)
     class_unregister(prusw_class);
     class_destroy(prusw_class);
     unregister_chrdev(major_number, DEVICE_NAME);
+	mutex_destroy(&prusw_mutex);
     printk(KERN_INFO "prusw: Exiting\n");
 }
 
@@ -88,6 +93,11 @@ static void __exit prusw_exit(void)
 
 static int dev_open(struct inode *inodep, struct file *filep)
 {
+	if (!mutex_trylock(&prusw_mutex))
+	{
+		printk(KERN_ALERT "prusw: Device in use by another process");
+		return -EBUSY;
+	}
     open_count++;
     printk(KERN_INFO "prusw: Device opened %d times\n", open_count);
     return 0;
@@ -130,6 +140,7 @@ static ssize_t dev_write(
 
 static int dev_release(struct inode *inodep, struct file *filep)
 {
+	mutex_unlock(&prusw_mutex);
     printk(KERN_INFO "prusw: Device successfully closed\n");
     return 0;
 }
