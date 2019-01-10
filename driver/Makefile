@@ -7,7 +7,9 @@ all:
 	make -C $(K_DIR) M=$(PWD) modules
 
 install:
+    # TODO: Root check
 	$(MAKE) -C $(K_DIR) SUBDIRS=$(PWD) modules_install
+    cp rules/99-prusw.rules /etc/udev/rules.d
 
 clean:
 	make -C $(K_DIR) M=$(PWD) clean
