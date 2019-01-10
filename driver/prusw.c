@@ -105,17 +105,24 @@ static ssize_t dev_read(
     size_t len,
     loff_t *offset
 ){
-    int copy_err = 0;
-	const char* test_msg = "This is a test";
-	size_t test_msg_sz = sizeof(char)*strlen(test_msg);
-    copy_err = copy_to_user(buffer, test_msg, test_msg_sz);
-    if (copy_err != 0)
-    {
-        printk(KERN_INFO "prusw: Failed to send %d characters\n", test_msg_sz);
-        return -EFAULT;
-    }
-	printk(KERN_INFO "prusw: Sent %d characters\n", test_msg_sz);
-	return 0;
+	const char* test_msg = "prusw output test\n";
+	size_t test_msg_sz = strlen(test_msg);
+    size_t count = len;
+    ssize_t retval = 0;
+	unsigned long ret = 0;
+	if (*offset >= test_msg_sz)
+	{
+		return retval;
+	}
+	if (*offset + len > test_msg_sz)
+	{
+		count = test_msg_sz - *offset;
+	}
+	ret = copy_to_user(buffer, test_msg, count);
+	*offset += count - ret;
+	retval = count - ret;
+	printk(KERN_INFO "prusw: Sent %d characters\n", count);
+	return retval;
 }
 
 static ssize_t dev_write(
