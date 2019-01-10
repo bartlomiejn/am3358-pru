@@ -6,12 +6,12 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-inline bool get_P8_15()
+inline bool get_P8_15(void)
 {
     return ui32_get_nth_bit(__R31, 15);
 }
 
-inline bool get_P8_21()
+inline bool get_P8_21(void)
 {
     return ui32_get_nth_bit(__R31, 12);
 }
@@ -26,12 +26,12 @@ inline void set_P8_20(bool value)
     r32_set_nth_bit(&__R30, 13, (int)value);
 }
 
-inline void reset_cycle_count()
+inline void reset_cycle_count(void)
 {
     PRU0_CTRL.CTRL_bit.CYCLE = 0;
 }
 
-inline void enable_cycle_counter()
+inline void enable_cycle_counter(void)
 {
     PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;

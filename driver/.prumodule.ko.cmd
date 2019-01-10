@@ -1,1 +1,0 @@
-cmd_/home/debian/pru-stopwatch/driver/prumodule.ko := ld -EL -r  -T ./scripts/module-common.lds --build-id  -T ./arch/arm/kernel/module.lds -o /home/debian/pru-stopwatch/driver/prumodule.ko /home/debian/pru-stopwatch/driver/prumodule.o /home/debian/pru-stopwatch/driver/prumodule.mod.o ;  true
