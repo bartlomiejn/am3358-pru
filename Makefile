@@ -41,4 +41,8 @@ remove_driver:
 	sudo rmmod $(DRIVER_KO)
 	cd module && $(MAKE) clean
 
+PHONY += clean
+clean:
+	rm -rf output/*
+
 .PHONY: $(PHONY)
