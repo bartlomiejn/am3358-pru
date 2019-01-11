@@ -74,8 +74,8 @@ struct rpmsg_resource_table {
 	struct fw_rsc_custom pru_ints;
 };
 
-#pragma DATA_SECTION(rpmsg_resource_table, ".resource_table")
-#pragma RETAIN(rpmsg_resource_table)
+#pragma DATA_SECTION(resource_table, ".resource_table")
+#pragma RETAIN(resource_table)
 struct rpmsg_resource_table resource_table = {
 	1,	    /* Resource table version: only version 1 is supported by the current driver */
 	2,	    /* Number of entries in the table */
