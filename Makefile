@@ -16,14 +16,18 @@ post_reboot:
 	sudo apt-get install linux-headers-$(shell uname -r)
 
 FIRMWARE_SRC = firmware/pru0.c
-LINKER_CMD = firmware/AM335x_PRU.cmd
-INCLUDE = --include_path=include --include_path=include/am335x
+LINKER_CMD_FILE = firmware/AM335x_PRU.cmd
+INCLUDE_PATHS = \
+	--include_path=include \
+	--include_path=include/am335x \
+	--include_path=/usr/share/ti/cgt-pru/lib \
+	--include_path=/usr/share/ti/cgt-pru/include
 RPMSG_LIB = --library=lib/rpmsg_lib.lib
-PRU_CGT = /usr/share/ti/cgt-pru
 PHONY += setup_firmware
 setup_firmware: $(FIRMWARE_SRC)
 	mkdir -p output
-	clpru -fr=output --c99 $(FIRMWARE_SRC) $(LINKER_CMD) $(INCLUDE) -i$(PRU_CGT)/lib -i$(PRU_CGT)/include --run_linker $(RPMSG_LIB)
+	clpru -fr=output $(FIRMWARE_SRC) $(LINKER_CMD_FILE) $(INCLUDE_PATHS) \
+		-i$(PRU_CGT)/lib -i$(PRU_CGT)/include --run_linker $(RPMSG_LIB)
 
 DRIVER_KO = pru_stopwatch.ko
 PHONY += setup_driver
