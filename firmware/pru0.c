@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <pru_cfg.h>
 #include <pru_ctrl.h>
 #include <pru_intc.h>
 #include <pru_rpmsg.h>
