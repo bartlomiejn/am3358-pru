@@ -1,13 +1,6 @@
-/****************************************************************************/
-/*  AM335x_PRU.cmd                                                          */
-/*  Copyright (c) 2015  Texas Instruments Incorporated                      */
-/*                                                                          */
-/*    Description: This file is a linker command file that can be used for  */
-/*                 linking PRU programs built with the C compiler and       */
-/*                 the resulting .out file on an AM335x device.             */
-/****************************************************************************/
-
 -cr								/* Link using C conventions */
+-stack 0x100
+-heap 0x100
 
 /* Specify the System Memory Map */
 MEMORY
