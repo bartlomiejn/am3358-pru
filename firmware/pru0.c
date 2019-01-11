@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pru_ctrl.h>
+#include <pru_intc.h>
 #include <pru_rpmsg.h>
 #include "binary.h"
 #include "resource_table_0.h"
@@ -86,7 +87,7 @@ static void setup_ocp(void)
 /// Clear the PRUSS system event that ARM will use to notify us
 static void setup_rpmsg(void)
 {
-    clear_host0_int();
+    reset_host_int();
     status = &resource_table.rpmsg_vdev.status;
     while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
     pru_rpmsg_init(
@@ -134,5 +135,5 @@ static bool is_host_int_set(void)
 /// Clear status of PRUSS system event from ARM
 static void reset_host_int(void)
 {
-    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST;
+    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 }
