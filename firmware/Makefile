@@ -26,7 +26,6 @@ install:
 
 PHONY += clean
 clean:
-	rm *.pp
 	rm output/*
 
 .PHONY: $(PHONY)
