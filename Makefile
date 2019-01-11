@@ -22,13 +22,12 @@ INCLUDE_PATHS = \
 	--include_path=include/am335x \
 	--include_path=/usr/share/ti/cgt-pru/lib \
 	--include_path=/usr/share/ti/cgt-pru/include
-RPMSG_LIB = --library=lib/rpmsg_lib.lib
+LIBS = --library=lib/rpmsg_lib.lib --library=libc.a
 FLAGS = -fr=output --run_linker --ram_model
 PHONY += setup_firmware
 setup_firmware: $(FIRMWARE_SRC) $(LINKER_CMD_SRC)
 	mkdir -p output
-	clpru \
-		$(FIRMWARE_SRC) $(LINKER_CMD_SRC) $(INCLUDE_PATHS) $(FLAGS) $(RPMSG_LIB)
+	clpru $(FIRMWARE_SRC) $(LINKER_CMD_SRC) $(INCLUDE_PATHS) $(FLAGS) $(LIBS)
 
 DRIVER_KO = pru_stopwatch.ko
 PHONY += setup_driver
