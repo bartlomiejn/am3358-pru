@@ -15,13 +15,20 @@ post_reboot:
 	sudo apt-get update
 	sudo apt-get install linux-headers-$(shell uname -r)
 
-FIRMWARE_SRC = firmware/pru0.c
-INCLUDE = --include_path=include
-LIB = --library=lib
-PHONY += setup_firmware
-setup_firmware:
-	clpru -fr=output --c99 $(FIRMWARE_SRC) $(INCLUDE) $(LIB)
-	# TODO: Loading of firmware
+PRU0_SRC = firmware/pru0.c
+PRU0_OBJECT = output/pru0.object
+LINKER_CMD_SRC = firmware/AM335x_PRU.cmd
+INCLUDES = \
+	--include_path=include \
+	--include_path=include/am335x \
+	--include_path=/usr/share/ti/cgt-pru/include
+LIBS = --library=lib/rpmsg_lib.lib --library=libc.a
+CFLAGS = --endian=little --hardware_mac=on --run_linker --ram_model
+PHONY += build_firmware
+build_firmware: $(PRU0_SRC) $(LINKER_CMD_SRC)
+	mkdir -p output
+	clpru $(CFLAGS) $(INCLUDES) -fe $(PRU0_OBJECT) $(PRU0_SRC)
+	clpru -z $(LINKER_CMD_SRC)  $(FLAGS) $(LIBS) -o output/am335x-pru0-fw $(PRU0_OBJECT)
 
 DRIVER_KO = pru_stopwatch.ko
 PHONY += setup_driver
@@ -33,5 +40,9 @@ PHONY += remove_driver
 remove_driver:
 	sudo rmmod $(DRIVER_KO)
 	cd module && $(MAKE) clean
+
+PHONY += clean
+clean:
+	rm -rf output/*
 
 .PHONY: $(PHONY)
