@@ -21,8 +21,8 @@ PHONY += install
 install:
 	# TODO: Add root check
 	cp output/am335x-pru0-fw /lib/firmware
-	rmmod -f pru_rproc
-	modprobe pru_rproc
+	echo 'am335x-pru0-fw' > /sys/class/remoteproc/remoteproc1/firmware
+	echo 'start' > /sys/class/remoteproc/remoteproc1/state
 
 PHONY += clean
 clean:
