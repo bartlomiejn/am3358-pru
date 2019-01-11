@@ -128,16 +128,15 @@ static void run_main_loop(void)
         if (__R31 & HOST_INT)
         {
             reset_host_int();
-        }
-        while (pru_rpmsg_receive(
-            &transport,
-            &src,
-            &dst,
-            receive_buf,
-            &len
-        ) == PRU_RPMSG_SUCCESS) {
-            strcpy(send_buf, "Arbitrary")
-            pru_rpmsg_send(&transport, dst, src, send_buf, strlen(message));
+            while (pru_rpmsg_receive(
+                &transport,
+                &src,
+                &dst,
+                receive_buf,
+                &len
+            ) == PRU_RPMSG_SUCCESS) {
+                pru_rpmsg_send(&transport, dst, src, "Arbitrary Message", strlen("Arbitrary Message"));
+            }
         }
     }
 }
