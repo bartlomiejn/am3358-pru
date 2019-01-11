@@ -24,7 +24,7 @@ INCLUDE_PATHS = \
 	--include_path=/usr/share/ti/cgt-pru/include
 RPMSG_LIB = --library=lib/rpmsg_lib.lib
 PHONY += setup_firmware
-setup_firmware: $(FIRMWARE_SRC)
+setup_firmware: $(FIRMWARE_SRC) $(LINKER_CMD_SRC)
 	mkdir -p output
 	clpru \
 		-fr=output $(FIRMWARE_SRC) $(LINKER_CMD_SRC) $(INCLUDE_PATHS) \
