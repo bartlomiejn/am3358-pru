@@ -110,7 +110,7 @@ static void setup_rpmsg(void)
 /// Reset cycles and start the cycle counter
 static void setup_cycle_counter(void)
 {
-    PRU0_CTRL.CTRL_bit.CYCLE = 0;
+    PRU0_CTRL.CYCLE = 0;
     PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 }
