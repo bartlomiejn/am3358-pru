@@ -28,7 +28,7 @@ CFLAGS = -v3 --endian=little --hardware_mac=on --run_linker --ram_model
 PHONY += build_firmware
 build_firmware: $(PRU0_SRC) $(LINKER_CMD_SRC)
 	mkdir -p output
-	clpru $(CFLAGS) $(INCLUDES) $(PRU0_SRC) -fe=$(PRU0_OBJECT)
+	clpru $(CFLAGS) $(INCLUDES) -fe $(PRU0_OBJECT) $(PRU0_SRC)
 	clpru -z $(LINKER_CMD_SRC)  $(FLAGS) $(LIBS) -o output/am335x-pru0-fw $(PRU0_OBJECT)
 
 DRIVER_KO = pru_stopwatch.ko
