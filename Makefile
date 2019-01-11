@@ -21,7 +21,6 @@ LINKER_CMD_SRC = firmware/AM335x_PRU.cmd
 INCLUDES = \
 	--include_path=include \
 	--include_path=include/am335x \
-	--include_path=/usr/share/ti/cgt-pru/lib \
 	--include_path=/usr/share/ti/cgt-pru/include
 LIBS = --library=lib/rpmsg_lib.lib --library=libc.a
 CFLAGS = -v3 --endian=little --hardware_mac=on --run_linker --ram_model
