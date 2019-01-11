@@ -16,9 +16,11 @@ post_reboot:
 	sudo apt-get install linux-headers-$(shell uname -r)
 
 FIRMWARE_SRC = firmware/pru0.c
+INCLUDE = --include_path=include
+LIB = --library=lib
 PHONY += setup_firmware
 setup_firmware:
-	clpru -fr=output --c99 $(FIRMWARE_SRC)
+	clpru -fr=output --c99 $(FIRMWARE_SRC) $(INCLUDE) $(LIB)
 	# TODO: Loading of firmware
 
 DRIVER_KO = pru_stopwatch.ko
