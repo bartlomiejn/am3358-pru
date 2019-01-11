@@ -15,20 +15,23 @@ post_reboot:
 	sudo apt-get update
 	sudo apt-get install linux-headers-$(shell uname -r)
 
+PRU_CGT_ROOT = /usr/share/ti/cgt-pru/
+PRU_RPMSG_ROOT = /usr/lib/ti/pru-software-support-package/
+CFLAGS = -v3 --endian=little --hardware_mac=on
+INCLUDES = \
+	--include_path=$(PRU_CGT_ROOT)include \
+	--include_path=$(PRU_RPMSG_ROOT)include \
+	--include_path=$(PRU_RPMSG_ROOT)include/am335x
 PRU0_SRC = firmware/pru0.c
 PRU0_OBJECT = output/pru0.object
 LINKER_CMD_SRC = firmware/AM335x_PRU.cmd
-INCLUDES = \
-	--include_path=include \
-	--include_path=include/am335x \
-	--include_path=/usr/share/ti/cgt-pru/include
-LIBS = --library=lib/rpmsg_lib.lib --library=libc.a
-CFLAGS = -v3 --endian=little --hardware_mac=on --run_linker --ram_model
+LIBS = -l$(PRU_RPMSG_ROOT)lib/rpmsg_lib.lib
+
 PHONY += build_firmware
 build_firmware: $(PRU0_SRC) $(LINKER_CMD_SRC)
 	mkdir -p output
 	clpru $(CFLAGS) $(INCLUDES) -fe $(PRU0_OBJECT) $(PRU0_SRC)
-	clpru -z $(LINKER_CMD_SRC)  $(FLAGS) $(LIBS) -o output/am335x-pru0-fw $(PRU0_OBJECT)
+	clpru -z $(LINKER_CMD_SRC) -i $(CGT_PRU_ROOT)lib -o output/am335x-pru0-fw $(PRU0_OBJECT) $(LIBS)
 
 DRIVER_KO = pru_stopwatch.ko
 PHONY += setup_driver
