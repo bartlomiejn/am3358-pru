@@ -3,6 +3,7 @@
 #include <pru_ctrl.h>
 #include <pru_rpmsg.h>
 #include "binary.h"
+#include "resource_table_0.h"
 
 static bool get_P8_15(void);
 static bool get_P8_21(void);
@@ -12,9 +13,34 @@ static void setup_ocp(void);
 static void setup_rpmsg(void);
 static void setup_cycle_counter(void);
 static void run_main_loop(void);
+static bool is_host_int_set(void);
+static void reset_host_int(void);
+
+/* Host-0 Interrupt sets bit 30 in register R31 */
+#define HOST_INT                    ((uint32_t) 1 << 30)
+/*
+ * The PRU-ICSS system events used for RPMsg are defined in the Linux device tree
+ * PRU0 uses system event 16 (To ARM) and 17 (From ARM)
+ * PRU1 uses system event 18 (To ARM) and 19 (From ARM)
+ */
+#define TO_ARM_HOST_SYS_EVENT       16
+#define FROM_ARM_HOST_SYS_EVENT     17
+/*
+ * Using the name 'rpmsg-pru' will probe the rpmsg_pru driver found
+ * at linux-x.y.z/drivers/rpmsg/rpmsg_pru.c
+ */
+#define CHAN_NAME                   "rpmsg-pru"
+#define CHAN_DESC                   "Channel 30"
+#define CHAN_PORT                   30
+/*
+ * Used to make sure the Linux drivers are ready for RPMsg communication
+ * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
+ */
+#define VIRTIO_CONFIG_S_DRIVER_OK   4
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
+volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport transport;
 
 int main(void)
@@ -51,18 +77,35 @@ static void set_P8_20(bool value)
     r32_set_nth_bit(&__R30, 13, (int)value);
 }
 
-// Setup OCP master port access for accessing external memories
+/// Setup OCP master port access for accessing external memories
 static void setup_ocp(void)
 {
     CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 }
 
-// Clear the PRUSS system event that ARM will use to notify us
+/// Clear the PRUSS system event that ARM will use to notify us
 static void setup_rpmsg(void)
 {
-    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST;
+    clear_host0_int();
+    status = &resource_table.rpmsg_vdev.status;
+    while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
+    pru_rpmsg_init(
+        &transport,
+        &resource_table.rpmsg_vring0,
+        &resource_table.rpmsg_vring1,
+        TO_ARM_HOST_SYS_EVENT,
+        FROM_ARM_HOST_SYS_EVENT
+    );
+    while (pru_rpmsg_channel(
+        RPMSG_NS_CREATE,
+        &transport,
+        CHAN_NAME,
+        CHAN_DESC,
+        CHAN_PORT
+    ) != PRU_RPMSG_SUCCESS);
 }
 
+/// Reset cycles and start the cycle counter
 static void setup_cycle_counter(void)
 {
     PRU0_CTRL.CTRL_bit.CYCLE = 0;
@@ -72,5 +115,24 @@ static void setup_cycle_counter(void)
 
 static void run_main_loop(void)
 {
-    while (true) {}
+    while (true)
+    {
+        // TODO: Store elapsed cycles
+        if (is_host_int_set())
+        {
+            reset_host_int();
+            // TODO: Calculate and send elapsed time count through rpmsg
+        }
+    }
+}
+
+static bool is_host_int_set(void)
+{
+    return __R31 & HOST_INT;
+}
+
+/// Clear status of PRUSS system event from ARM
+static void reset_host_int(void)
+{
+    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST;
 }

@@ -1,3 +1,6 @@
+#ifndef _BINARY_H_
+#define _BINARY_H_
+
 #include <stdbool.h>
 
 #define BINARY(x) string_to_binary_(#x)
@@ -22,3 +25,5 @@ inline void r32_set_nth_bit(volatile uint32_t *source, int n, int to)
 {
     *source = (*source & (~(1 << n))) | (to << n);
 }
+
+#endif
