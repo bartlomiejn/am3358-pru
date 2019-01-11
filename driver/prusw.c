@@ -11,7 +11,7 @@
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Bartlomiej Nowak");
-MODULE_DESCRIPTION("Character device driver for AM335x pru-stopwatch firmware");
+MODULE_DESCRIPTION("Driver for AM335x pru-stopwatch firmware");
 MODULE_VERSION("0.1");
 
 static int major_number;
@@ -83,7 +83,7 @@ static void __exit prusw_exit(void)
     class_destroy(prusw_class);
     unregister_chrdev(major_number, DEVICE_NAME);
     mutex_destroy(&prusw_mutex);
-    printk(KERN_INFO "prusw: Exiting\n");
+    printk(KERN_INFO "prusw: Exited\n");
 }
 
 // File operations
@@ -95,7 +95,6 @@ static int dev_open(struct inode *inodep, struct file *filep)
         printk(KERN_ALERT "prusw: Device in use by another process");
         return -EBUSY;
     }
-    printk(KERN_INFO "prusw: Device opened\n");
     return 0;
 }
 

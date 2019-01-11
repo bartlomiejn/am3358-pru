@@ -15,7 +15,6 @@ static void setup_ocp(void);
 static void setup_rpmsg(void);
 static void setup_cycle_counter(void);
 static void run_main_loop(void);
-static bool is_host_int_set(void);
 static void reset_host_int(void);
 
 /* Host-0 Interrupt sets bit 30 in register R31 */
@@ -117,20 +116,23 @@ static void setup_cycle_counter(void)
 
 static void run_main_loop(void)
 {
+    uint16_t src, dst, len;
     while (true)
     {
-        // TODO: Store elapsed cycles
-        if (is_host_int_set())
+        if (__R31 & HOST_INT)
         {
             reset_host_int();
-            // TODO: Calculate and send elapsed time count through rpmsg
+            while (pru_rpmsg_receive(
+                &transport,
+                &src,
+                &dst,
+                payload,
+                &len
+            ) == PRU_RPMSG_SUCCESS) {
+				pru_rpmsg_send(&transport, dst, src, payload, len);
+			}
         }
     }
-}
-
-static bool is_host_int_set(void)
-{
-    return __R31 & HOST_INT;
 }
 
 /// Clear status of PRUSS system event from ARM
