@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include <pru_cfg.h>
 #include <pru_ctrl.h>
 #include <pru_intc.h>
@@ -115,25 +116,28 @@ static void setup_cycle_counter(void)
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 }
 
-uint8_t payload[396];
+uint8_t receive_buf[396];
+uint8_t send_buf[396];
 
 static void run_main_loop(void)
 {
     uint16_t src, dst, len;
+    char *message = "Arbitrary message";
     while (true)
     {
         if (__R31 & HOST_INT)
         {
             reset_host_int();
-            while (pru_rpmsg_receive(
-                &transport,
-                &src,
-                &dst,
-                payload,
-                &len
-            ) == PRU_RPMSG_SUCCESS) {
-				pru_rpmsg_send(&transport, dst, src, (uint8_t)"wez sie kurwa ogarnij", len);
-			}
+        }
+        while (pru_rpmsg_receive(
+            &transport,
+            &src,
+            &dst,
+            receive_buf,
+            &len
+        ) == PRU_RPMSG_SUCCESS) {
+            strcpy(send_buf, "Arbitrary")
+            pru_rpmsg_send(&transport, dst, src, send_buf, strlen(message));
         }
     }
 }
