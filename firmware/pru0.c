@@ -132,7 +132,7 @@ static void run_main_loop(void)
                 payload,
                 &len
             ) == PRU_RPMSG_SUCCESS) {
-				pru_rpmsg_send(&transport, dst, src, payload, len);
+				pru_rpmsg_send(&transport, dst, src, (uint8_t)"wez sie kurwa ogarnij", len);
 			}
         }
     }
