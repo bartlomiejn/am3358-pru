@@ -136,7 +136,7 @@ static void run_main_loop(void)
             receive_buf,
             &len
         ) == PRU_RPMSG_SUCCESS) {
-            strcpy(send_buf, "Arbitrary")
+            strcpy(send_buf, (uint8_t*)"Arbitrary");
             pru_rpmsg_send(&transport, dst, src, send_buf, strlen(message));
         }
     }
