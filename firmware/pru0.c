@@ -4,6 +4,7 @@
 #include <pru_ctrl.h>
 #include <pru_intc.h>
 #include <pru_rpmsg.h>
+#include <rsc_types.h>
 #include "binary.h"
 #include "resource_table_0.h"
 
@@ -113,6 +114,8 @@ static void setup_cycle_counter(void)
     PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 }
+
+uint8_t payload[396];
 
 static void run_main_loop(void)
 {
