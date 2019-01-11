@@ -24,7 +24,7 @@ INCLUDES = \
 	--include_path=/usr/share/ti/cgt-pru/lib \
 	--include_path=/usr/share/ti/cgt-pru/include
 LIBS = --library=lib/rpmsg_lib.lib --library=libc.a
-CFLAGS = -v3 --endian=little --hardware_mac=on -fr=output --run_linker --ram_model -fe=$(OBJECT)
+CFLAGS = -v3 --endian=little --hardware_mac=on --run_linker --ram_model -fe=$(OBJECT)
 PHONY += build_firmware
 build_firmware: $(FIRMWARE_SRC) $(LINKER_CMD_SRC)
 	mkdir -p output
