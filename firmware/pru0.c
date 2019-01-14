@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdbool.h>
 #include <pru_cfg.h>
 #include <pru_ctrl.h>
@@ -95,7 +94,10 @@ int main(void)
                 &rpmsg_receive_len
             ) == PRU_RPMSG_SUCCESS)
             {
-                memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
+                for (int i = 0; i < RPMSG_SEND_SZ; i++)
+                {
+                    rpmsg_send_buf[i] = 0;
+                }
                 sprintf((char*)rpmsg_send_buf, "%d\n", PRU0_CTRL.CYCLE);
                 pru_rpmsg_send(
                     &rpmsg_transport,
