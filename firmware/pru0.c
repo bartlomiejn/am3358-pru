@@ -108,6 +108,5 @@ int main(void)
         }
     };
 
-    __halt();
     return 0;
 }
