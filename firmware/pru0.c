@@ -31,9 +31,7 @@
  * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
-/* Firmware specific definitions */
-#define S_TO_NS_RATIO 1000000000
-#define CYCLE_TIME_NS 5
+
 #define RPMSG_MSG_SIZE 396
 
 static void set_P8_11(bool value);
@@ -181,8 +179,11 @@ static void run_main_loop(void)
             while (receive_from_arm() == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
-                double time = (double)(PRU0_CTRL.CYCLE * CYCLE_TIME_NS) / (double)S_TO_NS_RATIO;
-                sprintf((char*)rpmsg_send_buf, "Time since cycle reset: %f\n", time);
+                sprintf(
+                    (char*)rpmsg_send_buf,
+                    "Time since cycle reset: %f\n",
+                    PRU0_CTRL.CYCLE
+                );
                 send_to_arm(rpmsg_send_buf);
             }
         }
