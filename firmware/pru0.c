@@ -30,7 +30,11 @@
  * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
-
+<<<<<<< HEAD
+/* Firmware specific definitions */
+=======
+/* Firmware definitions */
+>>>>>>> 7f78cf8... Blah blah
 #define S_TO_NS_RATIO 1_000_000_000
 #define CYCLE_TIME_NS 5
 #define RPMSG_MSG_SIZE 396
@@ -45,12 +49,13 @@ static void setup_cycle_counter(void);
 static void reset_host_int(void);
 static void run_main_loop(void);
 
-volatile register uint32_t __R30;
-volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
-static struct pru_rpmsg_transport transport;
+static struct pru_rpmsg_transport rpmsg_transport;
 uint8_t rpmsg_receive_buf[RPMSG_MSG_SIZE], rpmsg_send_buf[RPMSG_MSG_SIZE];
 uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
+
+volatile register uint32_t __R30;
+volatile register uint32_t __R31;
 bool last_p8_15, last_p8_21;
 
 int main(void)
@@ -100,7 +105,7 @@ static void setup_rpmsg(void)
     status = &resource_table.rpmsg_vdev.status;
     while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
     pru_rpmsg_init(
-        &transport,
+        &rpmsg_transport,
         &resource_table.rpmsg_vring0,
         &resource_table.rpmsg_vring1,
         TO_ARM_HOST_SYS_EVENT,
@@ -108,7 +113,7 @@ static void setup_rpmsg(void)
     );
     while (pru_rpmsg_channel(
         RPMSG_NS_CREATE,
-        &transport,
+        &rpmsg_transport,
         CHAN_NAME,
         CHAN_DESC,
         CHAN_PORT
@@ -150,7 +155,7 @@ static void reset_host_int(void)
 static int16_t receive_from_arm()
 {
     return pru_rpmsg_receive(
-        &transport,
+        &rpmsg_transport,
         &rpmsg_src,
         &rpmsg_dst,
         rpmsg_receive_buf,
@@ -161,7 +166,7 @@ static int16_t receive_from_arm()
 static void send_to_arm(char* message)
 {
     return pru_rpmsg_send(
-        &transport,
+        &rpmsg_transport,
         rpmsg_dst,
         rpmsg_src,
         message,
@@ -176,7 +181,8 @@ static void run_main_loop(void)
         if (__R31 & HOST_INT)
         {
             reset_host_int();
-            while (receive_from_arm() == PRU_RPMSG_SUCCESS) {
+            while (receive_from_arm() == PRU_RPMSG_SUCCESS)
+            {
                 memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
                 double time = PRU0_CTRL.CYCLE * CYCLE_TIME_NS / S_TO_NS_RATIO;
                 sprintf(rpmsg_send_buf, "Time since cycle reset: %f\n", time);
