@@ -92,9 +92,12 @@ int main(void)
     {
         if (__R31 & HOST_INT)
         {
-            // Update elapsed time once a milisecond passes
+            // Update elapsed time once 4 bil cycles pass, which is fairly
+	    // close to uint32_t upper bounds
             if (PRU0_CTRL.CYCLE > CYCLE_THRESHOLD)
             {
+		// Going down into assembly would probably achieve better
+		// precision here, but i treat is as good enough for now
                 PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
                 elapsed_time_ms += MS_PER_THRESHOLD;
             }
@@ -102,7 +105,7 @@ int main(void)
             // Reset host0 interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 
-            // If there is a message, return elapsed time
+            // If there is a message, return total elapsed time until now
             while (pru_rpmsg_receive(
                 &rpmsg_transport,
                 &rpmsg_src,
