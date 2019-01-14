@@ -29,6 +29,9 @@
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
 
+#define RPMSG_RECEIVE_SZ 396
+#define RPMSG_SEND_SZ 10
+
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
@@ -75,13 +78,13 @@ int main(void)
     last_p8_21 = (__R31 >> 12) & 1;
 
     // Run main loop
-    uint8_t rpmsg_receive_buf[396], rpmsg_send_buf[10];
+    uint8_t rpmsg_receive_buf[RPMSG_RECEIVE_SZ], rpmsg_send_buf[RPMSG_SEND_SZ];
     uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
     while (true)
     {
         if (__R31 & HOST_INT)
         {
-            // Reset host0 interrupot
+            // Reset host0 interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
             while (pru_rpmsg_receive(
                 &rpmsg_transport,
@@ -91,7 +94,7 @@ int main(void)
                 &rpmsg_receive_len
             ) == PRU_RPMSG_SUCCESS)
             {
-                memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
+                memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
                 sprintf((char*)rpmsg_send_buf, "%d\n", PRU0_CTRL.CYCLE);
                 pru_rpmsg_send(
                     &rpmsg_transport,
