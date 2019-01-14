@@ -47,16 +47,19 @@ void ui32_to_string(uint32_t n, char *buffer);
 // PRU Registers
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
+
 // RPMsg
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
 uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ], rpmsg_send_buf[RPMSG_MSG_SZ];
 uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
+
 // Switch 1
 bool switch1_last_p8_15;
 int32_t switch1_start_cycle = 0;
 int32_t switch1_curr_ms = 0;
 int32_t switch1_last_ms = -1;
+
 // Switch 2
 bool switch2_last_p8_21;
 
@@ -102,11 +105,15 @@ int main(void)
     while (true)
     {
         if (are_cycles_past_threshold())
+        {
             reduce_cycles_and_update_switch1();
+        }
 
         bool switch1_curr_p8_15 = (__R31 >> 15) & 1);
         if (switch1_curr_p8_15 != switch1_last_p8_15)
+        {
             handle_switch1_p8_15_change(switch1_curr_p8_15);
+        }
 
         // If received a host0 interrupt
         if (__R31 & HOST_INT)
@@ -114,7 +121,9 @@ int main(void)
             // Reset the interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
             while (receive_from_arm() == PRU_RPMSG_SUCCESS)
+            {
                 handle_query_from_arm();
+            }
         }
     };
 }
@@ -158,7 +167,7 @@ uint8_t receive_from_arm()
         &rpmsg_dst,
         rpmsg_receive_buf,
         &rpmsg_receive_len
-    )
+    );
 }
 
 /// Handles receieving a message from ARM over RPMsg
