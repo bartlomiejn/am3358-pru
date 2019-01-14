@@ -7,7 +7,6 @@
 #include <pru_intc.h>
 #include <pru_rpmsg.h>
 #include <rsc_types.h>
-#include "binary.h"
 #include "resource_table_0.h"
 
 /* Host-0 Interrupt sets bit 30 in register R31 */
@@ -34,13 +33,6 @@
 
 #define RPMSG_MSG_SIZE 396
 
-static inline void run_main_loop(void);
-static inline void set_P8_11(bool value);
-static inline void set_P8_20(bool value);
-static inline bool get_P8_15(void);
-static inline bool get_P8_21(void);
-static void reset_host_int(void);
-
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
 
@@ -48,17 +40,29 @@ volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 bool last_p8_15, last_p8_21;
 
+inline bool ui32_get_nth_bit(uint32_t from, int n)
+{
+    return (from >> n) & 1;
+}
+
+inline void r32_set_nth_bit(volatile uint32_t *source, int n, int to)
+{
+    *source = (*source & (~(1 << n))) | (to << n);
+}
+
 int main(void)
 {
-    // Set GPO to 1
-    set_P8_11(true);
-    set_P8_20(true);
+    // Set P8_11 to 1 (bit 15 of R30), set P8_20 to 1 (bit 13 of R30)
+    __R30 = (__R30 & (~(1 << 15))) | (1 << 15);
+    __R30 = (__R30 & (~(1 << 13))) | (1 << 13);
 
     // Setup OCP master port
     CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
+    // Reset host0 interrupt
+    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
+
     // Setup RPMsg
-    reset_host_int();
     status = &resource_table.rpmsg_vdev.status;
     while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
     pru_rpmsg_init(
@@ -81,18 +85,11 @@ int main(void)
     PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 
-    // First GPI state update
-    last_p8_15 = get_P8_15();
-    last_p8_21 = get_P8_21();
+    // Get initial P8_15 (bit 15 of R31) and P8_21 (bit 12 of R31) GPI state
+    last_p8_15 = (__R31 >> 15) & 1;
+    last_p8_21 = (__R31 >> 12) & 1;
 
-    run_main_loop();
-
-    __halt();
-    return 0;
-}
-
-static void run_main_loop(void)
-{
+    // Run main loop
     uint8_t rpmsg_receive_buf[RPMSG_MSG_SIZE],
             rpmsg_send_buf[RPMSG_MSG_SIZE];
     uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
@@ -100,7 +97,8 @@ static void run_main_loop(void)
     {
         if (__R31 & HOST_INT)
         {
-            reset_host_int();
+            // Reset host0 interrupot
+            CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
             while (pru_rpmsg_receive(
                 &rpmsg_transport,
                 &rpmsg_src,
@@ -124,31 +122,8 @@ static void run_main_loop(void)
                 );
             }
         }
-    }
-}
+    };
 
-static inline void set_P8_11(bool value)
-{
-    r32_set_nth_bit(&__R30, 15, (int)value);
-}
-
-static inline void set_P8_20(bool value)
-{
-    r32_set_nth_bit(&__R30, 13, (int)value);
-}
-
-static inline bool get_P8_15(void)
-{
-    return ui32_get_nth_bit(__R31, 15);
-}
-
-static inline bool get_P8_21(void)
-{
-    return ui32_get_nth_bit(__R31, 12);
-}
-
-/// Clear status of PRUSS system event from ARM
-static inline void reset_host_int(void)
-{
-    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
+    __halt();
+    return 0;
 }
