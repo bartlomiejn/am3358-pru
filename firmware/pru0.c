@@ -29,8 +29,6 @@
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
 
-#define RPMSG_MSG_SIZE 396
-
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
@@ -77,8 +75,7 @@ int main(void)
     last_p8_21 = (__R31 >> 12) & 1;
 
     // Run main loop
-    uint8_t rpmsg_receive_buf[RPMSG_MSG_SIZE],
-            rpmsg_send_buf[RPMSG_MSG_SIZE];
+    uint8_t rpmsg_receive_buf[396], rpmsg_send_buf[10];
     uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
     while (true)
     {
