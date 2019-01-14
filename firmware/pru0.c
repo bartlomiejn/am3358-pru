@@ -32,6 +32,9 @@
 
 #define RPMSG_RECEIVE_SZ 396
 #define RPMSG_SEND_SZ 10
+#define CYCLE_THRESHOLD 4000000000
+#define MS_PER_THRESHOLD 20000
+#define CYCLES_PER_MS 200000
 
 void ui32_to_string(uint32_t n, char *buffer);
 
@@ -39,9 +42,11 @@ volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
-bool last_p8_15, last_p8_21;
 uint8_t rpmsg_receive_buf[RPMSG_RECEIVE_SZ], rpmsg_send_buf[RPMSG_SEND_SZ];
 uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
+bool last_p8_15, last_p8_21;
+uint32_t elapsed_time_s, elapsed_time_ms;
+uint32_t curr_cycles;
 
 int main(void)
 {
@@ -87,8 +92,17 @@ int main(void)
     {
         if (__R31 & HOST_INT)
         {
+            // Update elapsed time once a milisecond passes
+            if (PRU0_CTRL.CYCLE > CYCLE_THRESHOLD)
+            {
+                PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
+                elapsed_time_ms += MS_PER_THRESHOLD;
+            }
+
             // Reset host0 interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
+
+            // If there is a message, return elapsed time
             while (pru_rpmsg_receive(
                 &rpmsg_transport,
                 &rpmsg_src,
@@ -97,8 +111,11 @@ int main(void)
                 &rpmsg_receive_len
             ) == PRU_RPMSG_SUCCESS)
             {
+                uint32_t total_elapsed_time_ms = elapsed_time_ms
+                    + PRU0_CTRL.CYCLE / CYCLES_PER_MS
+
                 memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
-                ui32_to_string(PRU0_CTRL.CYCLE, (char*)rpmsg_send_buf);
+                ui32_to_string(total_elapsed_time_ms, (char*)rpmsg_send_buf);
                 pru_rpmsg_send(
                     &rpmsg_transport,
                     rpmsg_dst,
@@ -111,6 +128,8 @@ int main(void)
     };
 }
 
+/// Converts uint32_t to a string. Including sprintf makes the executable bigger
+/// than allowed size and itoa is unimplemented
 void ui32_to_string(uint32_t n, char *buffer)
 {
     if(n == 0)
