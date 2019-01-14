@@ -16,8 +16,8 @@ static void set_P8_20(bool value);
 static void setup_ocp(void);
 static void setup_rpmsg(void);
 static void setup_cycle_counter(void);
-static void run_main_loop(void);
 static void reset_host_int(void);
+static void run_main_loop(void);
 
 /* Host-0 Interrupt sets bit 30 in register R31 */
 #define HOST_INT                    ((uint32_t) 1 << 30)
@@ -116,8 +116,13 @@ static void setup_cycle_counter(void)
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 }
 
+/// Clear status of PRUSS system event from ARM
+static void reset_host_int(void)
+{
+    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
+}
+
 uint8_t receive_buf[396];
-uint8_t send_buf[396];
 
 static void run_main_loop(void)
 {
@@ -139,10 +144,4 @@ static void run_main_loop(void)
             }
         }
     }
-}
-
-/// Clear status of PRUSS system event from ARM
-static void reset_host_int(void)
-{
-    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 }
