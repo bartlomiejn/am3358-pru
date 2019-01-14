@@ -33,7 +33,7 @@
 #define RPMSG_RECEIVE_SZ 396
 #define RPMSG_SEND_SZ 10
 
-char *ui32_to_string(uint32_t n);
+void ui32_to_string(uint32_t n, char *buffer);
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -117,21 +117,14 @@ void ui32_to_string(uint32_t n, char *buffer)
     {
         buffer[0] = '0';
         buffer[1] = '\0';
-        return buffer;
+        return;
     }
     int i = 0;
-    bool is_neg = n < 0;
-    unsigned int abs_n = is_neg ? -n : n;
-    while(abs_n != 0)
+    while(n != 0)
     {
-        buffer[i] = 48 + (abs_n % 10);
+        buffer[i] = 48 + (n % 10);
         i++;
-        abs_n = abs_n / 10;
-    }
-    if(is_neg)
-    {
-        buffer[i] = '-';
-        i++;
+        n /= 10;
     }
     buffer[i] = '\0';
     int t;
@@ -141,5 +134,4 @@ void ui32_to_string(uint32_t n, char *buffer)
         buffer[i - t - 1] ^= buffer[t];
         buffer[t] ^= buffer[i - t - 1];
     }
-    return buffer;
 }
