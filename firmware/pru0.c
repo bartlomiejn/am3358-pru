@@ -107,12 +107,12 @@ static void run_main_loop(void)
                 &rpmsg_dst,
                 rpmsg_receive_buf,
                 &rpmsg_receive_len
-            )() == PRU_RPMSG_SUCCESS)
+            ) == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
                 sprintf(
                     (char*)rpmsg_send_buf,
-                    "Time since cycle reset: %f\n",
+                    "Cycles since reset: %d\n",
                     PRU0_CTRL.CYCLE
                 );
                 pru_rpmsg_send(
@@ -120,7 +120,7 @@ static void run_main_loop(void)
                     rpmsg_dst,
                     rpmsg_src,
                     rpmsg_send_buf,
-                    strlen(rpmsg_send_buf)
+                    strlen((char*)rpmsg_send_buf)
                 );
             }
         }
