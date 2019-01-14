@@ -22,8 +22,8 @@
  * at linux-x.y.z/drivers/rpmsg/rpmsg_pru.c
  */
 #define CHAN_NAME                   "rpmsg-pru"
-#define CHAN_DESC                   "Channel 30"
-#define CHAN_PORT                   30
+#define CHAN_DESC                   "Channel 31"
+#define CHAN_PORT                   31
 /*
  * Used to make sure the Linux drivers are ready for RPMsg communication
  * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
