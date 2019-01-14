@@ -115,7 +115,7 @@ int main(void)
             ) == PRU_RPMSG_SUCCESS)
             {
                 uint32_t total_elapsed_time_ms = elapsed_time_ms
-                    + PRU0_CTRL.CYCLE / CYCLES_PER_MS
+                    + PRU0_CTRL.CYCLE / CYCLES_PER_MS;
 
                 memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
                 ui32_to_string(total_elapsed_time_ms, (char*)rpmsg_send_buf);
