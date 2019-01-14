@@ -33,6 +33,8 @@
 #define RPMSG_RECEIVE_SZ 396
 #define RPMSG_SEND_SZ 10
 
+char *ui32_to_string(uint32_t n);
+
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
@@ -96,7 +98,7 @@ int main(void)
             ) == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
-                sprintf((char*)rpmsg_send_buf, "%d\n", PRU0_CTRL.CYCLE);
+                rpmsg_send_buf = ui32_to_string(PRU0_CTRL.CYCLE);
                 pru_rpmsg_send(
                     &rpmsg_transport,
                     rpmsg_dst,
@@ -108,4 +110,37 @@ int main(void)
         }
     };
     return 0;
+}
+
+char *ui32_to_string(uint32_t n)
+{
+    char buffer[16];
+    if(n == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return buffer;
+    }
+    int i = 0;
+    bool is_neg = n < 0;
+    unsigned int abs_n = is_neg ? -n : n;
+    while(abs_n != 0)
+    {
+        buffer[i] = 48 + (abs_n % 10);
+        i++;
+        abs_n = abs_n / 10;
+    }
+    if(is_neg)
+    {
+        buffer[i] = '-';
+        i++;
+    }
+    buffer[i] = '\0';
+    for(int t = 0; t < i / 2; t++)
+    {
+        buffer[t] ^= buffer[i - t - 1];
+        buffer[i - t - 1] ^= buffer[t];
+        buffer[t] ^= buffer[i - t - 1];
+    }
+    return buffer;
 }
