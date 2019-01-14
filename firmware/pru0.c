@@ -90,19 +90,18 @@ int main(void)
     // Run main loop
     while (true)
     {
+        // Update elapsed time once 4 bil cycles pass, which is fairly
+        // close to uint32_t upper bounds
+        if (PRU0_CTRL.CYCLE > CYCLE_THRESHOLD)
+        {
+            PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
+            elapsed_time_ms += MS_PER_THRESHOLD;
+        }
+
+        // Check if we received a message after receiving a host0 interrupt
         if (__R31 & HOST_INT)
         {
-            // Update elapsed time once 4 bil cycles pass, which is fairly
-	    // close to uint32_t upper bounds
-            if (PRU0_CTRL.CYCLE > CYCLE_THRESHOLD)
-            {
-		// Going down into assembly would probably achieve better
-		// precision here, but i treat is as good enough for now
-                PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
-                elapsed_time_ms += MS_PER_THRESHOLD;
-            }
-
-            // Reset host0 interrupt
+            // Reset the interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 
             // If there is a message, return total elapsed time until now
@@ -114,8 +113,8 @@ int main(void)
                 &rpmsg_receive_len
             ) == PRU_RPMSG_SUCCESS)
             {
-                uint32_t total_elapsed_time_ms = elapsed_time_ms
-                    + PRU0_CTRL.CYCLE / CYCLES_PER_MS;
+                uint32_t total_elapsed_time_ms =
+                    elapsed_time_ms + PRU0_CTRL.CYCLE / CYCLES_PER_MS;
 
                 memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
                 ui32_to_string(total_elapsed_time_ms, (char*)rpmsg_send_buf);
