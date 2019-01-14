@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <pru_cfg.h>
@@ -31,7 +32,7 @@
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
 /* Firmware specific definitions */
-#define S_TO_NS_RATIO 1_000_000_000
+#define S_TO_NS_RATIO 1000000000
 #define CYCLE_TIME_NS 5
 #define RPMSG_MSG_SIZE 396
 
@@ -161,7 +162,7 @@ static int16_t receive_from_arm()
 
 static void send_to_arm(char* message)
 {
-    return pru_rpmsg_send(
+    pru_rpmsg_send(
         &rpmsg_transport,
         rpmsg_dst,
         rpmsg_src,
@@ -180,8 +181,8 @@ static void run_main_loop(void)
             while (receive_from_arm() == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
-                double time = PRU0_CTRL.CYCLE * CYCLE_TIME_NS / S_TO_NS_RATIO;
-                sprintf(rpmsg_send_buf, "Time since cycle reset: %f\n", time);
+                double time = (double)(PRU0_CTRL.CYCLE * CYCLE_TIME_NS) / (double)S_TO_NS_RATIO;
+                sprintf((char*)rpmsg_send_buf, "Time since cycle reset: %f\n", time);
                 send_to_arm(rpmsg_send_buf);
             }
         }
