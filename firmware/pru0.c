@@ -191,7 +191,7 @@ void handle_query_from_arm()
     {
         char message[] = "Valid queries:\nswitch1 - returns the interval between last state changes in miliseconds, -1 if never happened.\n";
         strcpy((char*)rpmsg_send_buf, message);
-        send_to_arm(message);
+        send_to_arm(rpmsg_send_buf);
     }
 }
 
