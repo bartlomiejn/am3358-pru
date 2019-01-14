@@ -39,7 +39,7 @@ void set_initial_switches_state();
 bool are_cycles_past_threshold();
 void reduce_cycles_and_update_switch1();
 void handle_switch1_p8_15_change(bool switch1_curr_p8_15);
-uint8_t receive_from_arm();
+uint8_t attempt_receive_from_arm();
 void handle_query_from_arm();
 void send_to_arm(char *message);
 void ui32_to_string(uint32_t n, char *buffer);
@@ -56,7 +56,7 @@ uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
 
 // Switch 1
 bool switch1_last_p8_15;
-int32_t switch1_start_cycle = 0;
+uint32_t switch1_start_cycle = 0;
 int32_t switch1_curr_ms = 0;
 int32_t switch1_last_ms = -1;
 
@@ -98,7 +98,6 @@ int main(void)
 
     // Setup and reset cycle counter
     PRU0_CTRL.CYCLE = 0;
-    PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 
     // Run main loop
@@ -118,9 +117,9 @@ int main(void)
         // If received a host0 interrupt
         if (__R31 & HOST_INT)
         {
-            // Reset the interrupt
+            // Reset the host0 interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
-            while (receive_from_arm() == PRU_RPMSG_SUCCESS)
+            while (attempt_receive_from_arm() == PRU_RPMSG_SUCCESS)
             {
                 handle_query_from_arm();
             }
@@ -129,24 +128,26 @@ int main(void)
 }
 
 /// Get initial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of
-/// R31)
+/// R31).
 void set_initial_switches_state()
 {
     switch1_last_p8_15 = (__R31 >> 15) & 1;
     switch2_last_p8_21 = (__R31 >> 12) & 1;
 }
 
-/// Are cycles approaching the 4 bil threshold value
+/// Are cycles approaching the 4 bil threshold value, which is fairly close to
+/// uint32_t bounds
 bool are_cycles_past_threshold()
 {
     return PRU0_CTRL.CYCLE > CYCLE_THRESHOLD;
 }
 
-/// Reduce cycle count once 4 bil cycles pass, which is fairly close to
-/// uint32_t bounds
+/// Reduce cycle count and update switch1 counters
 void reduce_cycles_and_update_switch1()
 {
+    PRU0_CTRL.CTRL_bit.CTR_EN = 0;
     PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
+    PRU0_CTRL.CTRL_bit.CTR_EN = 1;
     switch1_start_cycle = PRU0_CTRL.CYCLE;
     switch1_curr_ms += MS_PER_THRESHOLD;
 }
@@ -161,8 +162,8 @@ void handle_switch1_p8_15_change(bool switch1_curr_p8_15)
     switch1_curr_ms = 0;
 }
 
-/// Attempts to receive a message over RPMsg
-uint8_t receive_from_arm()
+/// Attempts to receive a message over RPMsg.
+uint8_t attempt_receive_from_arm()
 {
     return pru_rpmsg_receive(
         &rpmsg_transport,
@@ -173,12 +174,12 @@ uint8_t receive_from_arm()
     );
 }
 
-/// Handles receieving a message from ARM over RPMsg
+/// Handles receiving a message from ARM over RPMsg.
 void handle_query_from_arm()
 {
+    memset(rpmsg_send_buf, 0, RPMSG_MSG_SZ);
     if (strcmp((char*)rpmsg_receive_buf, "switch1"))
     {
-        memset(rpmsg_send_buf, 0, RPMSG_MSG_SZ);
         ui32_to_string(switch1_last_ms, (char*)rpmsg_send_buf);
         send_to_arm((char*)rpmsg_send_buf);
     }
@@ -189,6 +190,7 @@ void handle_query_from_arm()
     else
     {
         char message[] = "Valid queries:\nswitch1 - returns the interval between last state changes in miliseconds, -1 if never happened.\n";
+        strcpy((char*)rpmsg_send_buf, message);
         send_to_arm(message);
     }
 }
