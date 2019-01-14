@@ -38,6 +38,8 @@ volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
 bool last_p8_15, last_p8_21;
+uint8_t rpmsg_receive_buf[RPMSG_RECEIVE_SZ], rpmsg_send_buf[RPMSG_SEND_SZ];
+uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
 
 int main(void)
 {
@@ -79,8 +81,6 @@ int main(void)
     last_p8_21 = (__R31 >> 12) & 1;
 
     // Run main loop
-    uint8_t rpmsg_receive_buf[RPMSG_RECEIVE_SZ], rpmsg_send_buf[RPMSG_SEND_SZ];
-    uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
     while (true)
     {
         if (__R31 & HOST_INT)
