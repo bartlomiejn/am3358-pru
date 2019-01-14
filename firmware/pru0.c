@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
 #include <pru_cfg.h>
 #include <pru_ctrl.h>
@@ -95,11 +95,7 @@ int main(void)
             ) == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
-                sprintf(
-                    (char*)rpmsg_send_buf,
-                    "Cycles since reset: %d\n",
-                    PRU0_CTRL.CYCLE
-                );
+                sprintf((char*)rpmsg_send_buf, "%d\n", PRU0_CTRL.CYCLE);
                 pru_rpmsg_send(
                     &rpmsg_transport,
                     rpmsg_dst,
