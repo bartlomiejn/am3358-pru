@@ -128,19 +128,22 @@ int main(void)
     };
 }
 
+/// Get initial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of
+/// R31)
 void set_initial_switches_state()
 {
-    // Get initial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of R31)
     switch1_last_p8_15 = (__R31 >> 15) & 1;
     switch2_last_p8_21 = (__R31 >> 12) & 1;
 }
 
-/// Reduce cycle count once 4 bil cycles pass, which is fairly close to uint32_t bounds
+/// Are cycles approaching the 4 bil threshold value
 bool are_cycles_past_threshold()
 {
     return PRU0_CTRL.CYCLE > CYCLE_THRESHOLD;
 }
 
+/// Reduce cycle count once 4 bil cycles pass, which is fairly close to
+/// uint32_t bounds
 void reduce_cycles_and_update_switch1()
 {
     PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
@@ -152,8 +155,8 @@ void handle_switch1_p8_15_change(bool switch1_curr_p8_15)
 {
     uint32_t curr_cycle = PRU0_CTRL.CYCLE;
     switch1_last_p8_15 = switch1_curr_p8_15;
-    switch1_last_ms =
-        switch1_curr_ms + ((curr_cycle - switch1_start_cycle) / CYCLES_PER_MS);
+    switch1_last_ms = switch1_curr_ms
+        + ((curr_cycle - switch1_start_cycle) / CYCLES_PER_MS);
     switch1_start_cycle = curr_cycle;
     switch1_curr_ms = 0;
 }
@@ -185,7 +188,7 @@ void handle_query_from_arm()
     }
     else
     {
-        char message[] = "Valid queries:\nswitch1 - returns interval between last state change\n";
+        char message[] = "Valid queries:\nswitch1 - returns the interval between last state changes in miliseconds, -1 if never happened.\n";
         send_to_arm(message);
     }
 }
