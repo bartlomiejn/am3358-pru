@@ -98,7 +98,7 @@ int main(void)
             ) == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
-                rpmsg_send_buf = ui32_to_string(PRU0_CTRL.CYCLE);
+                ui32_to_string(PRU0_CTRL.CYCLE, (char*)rpmsg_send_buf);
                 pru_rpmsg_send(
                     &rpmsg_transport,
                     rpmsg_dst,
@@ -109,12 +109,10 @@ int main(void)
             }
         }
     };
-    return 0;
 }
 
-char *ui32_to_string(uint32_t n)
+void ui32_to_string(uint32_t n, char *buffer)
 {
-    char buffer[16];
     if(n == 0)
     {
         buffer[0] = '0';
@@ -136,7 +134,8 @@ char *ui32_to_string(uint32_t n)
         i++;
     }
     buffer[i] = '\0';
-    for(int t = 0; t < i / 2; t++)
+    int t;
+    for(t = 0; t < i / 2; t++)
     {
         buffer[t] ^= buffer[i - t - 1];
         buffer[i - t - 1] ^= buffer[t];
