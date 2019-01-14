@@ -4,7 +4,8 @@ CFLAGS = -v3 --endian=little --hardware_mac=on
 INCLUDES = \
 	--include_path=$(PRU_CGT_ROOT)include \
 	--include_path=$(PRU_RPMSG_ROOT)include \
-	--include_path=$(PRU_RPMSG_ROOT)include/am335x
+	--include_path=$(PRU_RPMSG_ROOT)include/am335x \
+	--include_path=/usr/include/arm-linux-gnueabihf/
 PRU0_SRC = pru0.c
 PRU0_OBJECT = output/pru0.object
 LINKER_CMD_SRC = AM335x_PRU.cmd
@@ -22,7 +23,7 @@ install:
 	# TODO: Add root check
 	cp output/am335x-pru0-fw /lib/firmware
 	echo 'stop' > /sys/class/remoteproc/remoteproc1/state
-	echo 'am335x-pru0-fw' > /sys/class/remoteproc/remoteproc1/firmware	
+	echo 'am335x-pru0-fw' > /sys/class/remoteproc/remoteproc1/firmware
 	echo 'start' > /sys/class/remoteproc/remoteproc1/state
 
 PHONY += clean
