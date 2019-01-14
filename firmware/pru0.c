@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <string.h>
 #include <pru_cfg.h>
 #include <pru_ctrl.h>
 #include <pru_intc.h>
@@ -32,22 +31,11 @@
 
 #define RPMSG_MSG_SIZE 396
 
-volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
-static struct pru_rpmsg_transport rpmsg_transport;
-
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
+volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
+static struct pru_rpmsg_transport rpmsg_transport;
 bool last_p8_15, last_p8_21;
-
-inline bool ui32_get_nth_bit(uint32_t from, int n)
-{
-    return (from >> n) & 1;
-}
-
-inline void r32_set_nth_bit(volatile uint32_t *source, int n, int to)
-{
-    *source = (*source & (~(1 << n))) | (to << n);
-}
 
 int main(void)
 {
