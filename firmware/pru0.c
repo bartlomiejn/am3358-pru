@@ -30,11 +30,7 @@
  * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
-<<<<<<< HEAD
 /* Firmware specific definitions */
-=======
-/* Firmware definitions */
->>>>>>> 7f78cf8... Blah blah
 #define S_TO_NS_RATIO 1_000_000_000
 #define CYCLE_TIME_NS 5
 #define RPMSG_MSG_SIZE 396
