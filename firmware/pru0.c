@@ -6,7 +6,6 @@
 #include <pru_ctrl.h>
 #include <pru_intc.h>
 #include <pru_rpmsg.h>
-#include <rsc_types.h>
 #include "resource_table_0.h"
 
 /* Host-0 Interrupt sets bit 30 in register R31 */
