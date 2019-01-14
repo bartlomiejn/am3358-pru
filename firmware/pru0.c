@@ -109,7 +109,7 @@ int main(void)
             reduce_cycles_and_update_switch1();
         }
 
-        bool switch1_curr_p8_15 = (__R31 >> 15) & 1);
+        bool switch1_curr_p8_15 = (__R31 >> 15) & 1;
         if (switch1_curr_p8_15 != switch1_last_p8_15)
         {
             handle_switch1_p8_15_change(switch1_curr_p8_15);
@@ -130,7 +130,7 @@ int main(void)
 
 void set_initial_switches_state()
 {
-    // Get intiial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of R31)
+    // Get initial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of R31)
     switch1_last_p8_15 = (__R31 >> 15) & 1;
     switch2_last_p8_21 = (__R31 >> 12) & 1;
 }
@@ -173,19 +173,19 @@ uint8_t receive_from_arm()
 /// Handles receieving a message from ARM over RPMsg
 void handle_query_from_arm()
 {
-    if (strcmp(rpmsg_receive_buf, "switch1"))
+    if (strcmp((char*)rpmsg_receive_buf, "switch1"))
     {
         memset(rpmsg_send_buf, 0, RPMSG_MSG_SZ);
         ui32_to_string(switch1_last_ms, (char*)rpmsg_send_buf);
         send_to_arm((char*)rpmsg_send_buf);
     }
-    else if (strcmp(rpmsg_receive_buf, "switch2"))
+    else if (strcmp((char*)rpmsg_receive_buf, "switch2"))
     {
         // TODO: Handle querying for switch_2 state
     }
     else
     {
-        char message[] = "Valid queries: switch1, switch2";
+        char message[] = "Valid queries:\nswitch1 - returns interval between last state change\n";
         send_to_arm(message);
     }
 }
