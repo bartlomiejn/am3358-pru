@@ -30,27 +30,39 @@
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
 
-#define RPMSG_RECEIVE_SZ 396
-#define RPMSG_SEND_SZ 10
+#define RPMSG_MSG_SZ 396
 #define CYCLE_THRESHOLD 4000000000
 #define MS_PER_THRESHOLD 20000
 #define CYCLES_PER_MS 200000
 
+void set_initial_switches_state();
+bool are_cycles_past_threshold();
+void reduce_cycles_and_update_switch1();
+void handle_switch1_p8_15_change(bool switch1_curr_p8_15);
+uint8_t receive_from_arm();
+void handle_query_from_arm();
+void send_to_arm(char *message);
 void ui32_to_string(uint32_t n, char *buffer);
 
+// PRU Registers
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
+// RPMsg
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
-uint8_t rpmsg_receive_buf[RPMSG_RECEIVE_SZ], rpmsg_send_buf[RPMSG_SEND_SZ];
+uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ], rpmsg_send_buf[RPMSG_MSG_SZ];
 uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
-bool last_p8_15, last_p8_21;
-uint32_t elapsed_time_s, elapsed_time_ms;
-uint32_t curr_cycles;
+// Switch 1
+bool switch1_last_p8_15;
+int32_t switch1_start_cycle = 0;
+int32_t switch1_curr_ms = 0;
+int32_t switch1_last_ms = -1;
+// Switch 2
+bool switch2_last_p8_21;
 
 int main(void)
 {
-    // Set P8_11 to 1 (bit 15 of R30), set P8_20 to 1 (bit 13 of R30)
+    // Set GPOs: P8_11 to 1 (bit 15 of R30), set P8_20 to 1 (bit 13 of R30)
     __R30 = (__R30 & (~(1 << 15))) | (1 << 15);
     __R30 = (__R30 & (~(1 << 13))) | (1 << 13);
 
@@ -78,60 +90,113 @@ int main(void)
         CHAN_PORT
     ) != PRU_RPMSG_SUCCESS);
 
+    // Setup initial switch info state
+    set_initial_switches_state();
+
     // Setup and reset cycle counter
     PRU0_CTRL.CYCLE = 0;
     PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
 
-    // Get initial P8_15 (bit 15 of R31) and P8_21 (bit 12 of R31) GPI state
-    last_p8_15 = (__R31 >> 15) & 1;
-    last_p8_21 = (__R31 >> 12) & 1;
-
     // Run main loop
     while (true)
     {
-        // Update elapsed time once 4 bil cycles pass, which is fairly
-        // close to uint32_t upper bounds
-        if (PRU0_CTRL.CYCLE > CYCLE_THRESHOLD)
-        {
-            PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
-            elapsed_time_ms += MS_PER_THRESHOLD;
-        }
+        if (are_cycles_past_threshold())
+            reduce_cycles_and_update_switch1();
 
-        // Check if we received a message after receiving a host0 interrupt
+        bool switch1_curr_p8_15 = (__R31 >> 15) & 1);
+        if (switch1_curr_p8_15 != switch1_last_p8_15)
+            handle_switch1_p8_15_change(switch1_curr_p8_15);
+
+        // If received a host0 interrupt
         if (__R31 & HOST_INT)
         {
             // Reset the interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
-
-            // If there is a message, return total elapsed time until now
-            while (pru_rpmsg_receive(
-                &rpmsg_transport,
-                &rpmsg_src,
-                &rpmsg_dst,
-                rpmsg_receive_buf,
-                &rpmsg_receive_len
-            ) == PRU_RPMSG_SUCCESS)
-            {
-                uint32_t total_elapsed_time_ms =
-                    elapsed_time_ms + PRU0_CTRL.CYCLE / CYCLES_PER_MS;
-
-                memset(rpmsg_send_buf, 0, RPMSG_SEND_SZ);
-                ui32_to_string(total_elapsed_time_ms, (char*)rpmsg_send_buf);
-                pru_rpmsg_send(
-                    &rpmsg_transport,
-                    rpmsg_dst,
-                    rpmsg_src,
-                    rpmsg_send_buf,
-                    strlen((char*)rpmsg_send_buf)
-                );
-            }
+            while (receive_from_arm() == PRU_RPMSG_SUCCESS)
+                handle_query_from_arm();
         }
     };
 }
 
-/// Converts uint32_t to a string. Including sprintf makes the executable bigger
-/// than allowed size and itoa is unimplemented
+void set_initial_switches_state()
+{
+    // Get intiial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of R31)
+    switch1_last_p8_15 = (__R31 >> 15) & 1;
+    switch2_last_p8_21 = (__R31 >> 12) & 1;
+}
+
+/// Reduce cycle count once 4 bil cycles pass, which is fairly close to uint32_t bounds
+bool are_cycles_past_threshold()
+{
+    return PRU0_CTRL.CYCLE > CYCLE_THRESHOLD;
+}
+
+void reduce_cycles_and_update_switch1()
+{
+    PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
+    switch1_start_cycle = PRU0_CTRL.CYCLE;
+    switch1_curr_ms += MS_PER_THRESHOLD;
+}
+
+void handle_switch1_p8_15_change(bool switch1_curr_p8_15)
+{
+    uint32_t curr_cycle = PRU0_CTRL.CYCLE;
+    switch1_last_p8_15 = switch1_curr_p8_15;
+    switch1_last_ms =
+        switch1_curr_ms + ((curr_cycle - switch1_start_cycle) / CYCLES_PER_MS);
+    switch1_start_cycle = curr_cycle;
+    switch1_curr_ms = 0;
+}
+
+/// Attempts to receive a message over RPMsg
+uint8_t receive_from_arm()
+{
+    return pru_rpmsg_receive(
+        &rpmsg_transport,
+        &rpmsg_src,
+        &rpmsg_dst,
+        rpmsg_receive_buf,
+        &rpmsg_receive_len
+    )
+}
+
+/// Handles receieving a message from ARM over RPMsg
+void handle_query_from_arm()
+{
+    if (strcmp(rpmsg_receive_buf, "switch1"))
+    {
+        memset(rpmsg_send_buf, 0, RPMSG_MSG_SZ);
+        ui32_to_string(switch1_last_ms, (char*)rpmsg_send_buf);
+        send_to_arm((char*)rpmsg_send_buf);
+    }
+    else if (strcmp(rpmsg_receive_buf, "switch2"))
+    {
+        // TODO: Handle querying for switch_2 state
+    }
+    else
+    {
+        char message[] = "Valid queries: switch1, switch2";
+        send_to_arm(message);
+    }
+}
+
+/// Sends message to ARM over RPMsg
+void send_to_arm(char *message)
+{
+    pru_rpmsg_send(
+        &rpmsg_transport,
+        rpmsg_dst,
+        rpmsg_src,
+        message,
+        strlen(message)
+    );
+}
+
+/// Converts uint32_t to a string.
+///
+/// Replacement for `sprintf` which makes the executable
+/// bigger than allowed size and `itoa` which is unimplemented.
 void ui32_to_string(uint32_t n, char *buffer)
 {
     if(n == 0)
