@@ -34,20 +34,15 @@
 
 #define RPMSG_MSG_SIZE 396
 
-static void set_P8_11(bool value);
-static void set_P8_20(bool value);
-static bool get_P8_15(void);
-static bool get_P8_21(void);
-static void setup_ocp(void);
-static void setup_rpmsg(void);
-static void setup_cycle_counter(void);
+static inline void run_main_loop(void);
+static inline void set_P8_11(bool value);
+static inline void set_P8_20(bool value);
+static inline bool get_P8_15(void);
+static inline bool get_P8_21(void);
 static void reset_host_int(void);
-static void run_main_loop(void);
 
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
-uint8_t rpmsg_receive_buf[RPMSG_MSG_SIZE], rpmsg_send_buf[RPMSG_MSG_SIZE];
-uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -55,47 +50,14 @@ bool last_p8_15, last_p8_21;
 
 int main(void)
 {
+    // Set GPO to 1
     set_P8_11(true);
     set_P8_20(true);
-    last_p8_15 = get_P8_15();
-    last_p8_21 = get_P8_21();
-    setup_ocp();
-    setup_rpmsg();
-    setup_cycle_counter();
-    run_main_loop();
-    __halt();
-    return 0;
-}
 
-static void set_P8_11(bool value)
-{
-    r32_set_nth_bit(&__R30, 15, (int)value);
-}
-
-static void set_P8_20(bool value)
-{
-    r32_set_nth_bit(&__R30, 13, (int)value);
-}
-
-static bool get_P8_15(void)
-{
-    return ui32_get_nth_bit(__R31, 15);
-}
-
-static bool get_P8_21(void)
-{
-    return ui32_get_nth_bit(__R31, 12);
-}
-
-/// Setup OCP master port access for accessing external memories
-static void setup_ocp(void)
-{
+    // Setup OCP master port
     CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-}
 
-/// Clear the PRUSS system event that ARM will use to notify us
-static void setup_rpmsg(void)
-{
+    // Setup RPMsg
     reset_host_int();
     status = &resource_table.rpmsg_vdev.status;
     while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
@@ -113,79 +75,80 @@ static void setup_rpmsg(void)
         CHAN_DESC,
         CHAN_PORT
     ) != PRU_RPMSG_SUCCESS);
-}
 
-/// Reset cycles and start the cycle counter
-static void setup_cycle_counter(void)
-{
+    // Setup and reset cycle counter
     PRU0_CTRL.CYCLE = 0;
     PRU0_CTRL.CTRL_bit.EN = 1;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
-}
 
-/// Clear status of PRUSS system event from ARM
-static void reset_host_int(void)
-{
-    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
-}
+    // First GPI state update
+    last_p8_15 = get_P8_15();
+    last_p8_21 = get_P8_21();
 
-// static void set_P8_11(bool value);
-// static void set_P8_20(bool value);
-// static bool get_P8_15(void);
-// static bool get_P8_21(void);
-//
-// static void update_switch1()
-// {
-//     if (last_p8_15 != get_P8_15())
-//     {
-//
-//     }
-// }
-//
-// static void update_switch2()
-// {
-//
-// }
+    run_main_loop();
 
-static int16_t receive_from_arm()
-{
-    return pru_rpmsg_receive(
-        &rpmsg_transport,
-        &rpmsg_src,
-        &rpmsg_dst,
-        rpmsg_receive_buf,
-        &rpmsg_receive_len
-    );
-}
-
-static void send_to_arm(char* message)
-{
-    pru_rpmsg_send(
-        &rpmsg_transport,
-        rpmsg_dst,
-        rpmsg_src,
-        message,
-        strlen(message)
-    );
+    __halt();
+    return 0;
 }
 
 static void run_main_loop(void)
 {
+    uint8_t rpmsg_receive_buf[RPMSG_MSG_SIZE],
+            rpmsg_send_buf[RPMSG_MSG_SIZE];
+    uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
     while (true)
     {
         if (__R31 & HOST_INT)
         {
             reset_host_int();
-            while (receive_from_arm() == PRU_RPMSG_SUCCESS)
+            while (pru_rpmsg_receive(
+                &rpmsg_transport,
+                &rpmsg_src,
+                &rpmsg_dst,
+                rpmsg_receive_buf,
+                &rpmsg_receive_len
+            ) == PRU_RPMSG_SUCCESS)
             {
                 memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
                 sprintf(
                     (char*)rpmsg_send_buf,
-                    "Time since cycle reset: %f\n",
+                    "Cycles since reset: %d\n",
                     PRU0_CTRL.CYCLE
                 );
-                send_to_arm(rpmsg_send_buf);
+                pru_rpmsg_send(
+                    &rpmsg_transport,
+                    rpmsg_dst,
+                    rpmsg_src,
+                    rpmsg_send_buf,
+                    strlen((char*)rpmsg_send_buf)
+                );
             }
         }
     }
+}
+
+static inline void set_P8_11(bool value)
+{
+    r32_set_nth_bit(&__R30, 15, (int)value);
+}
+
+static inline void set_P8_20(bool value)
+{
+    r32_set_nth_bit(&__R30, 13, (int)value);
+}
+
+static inline bool get_P8_15(void)
+{
+    return ui32_get_nth_bit(__R31, 15);
+}
+
+static inline bool get_P8_21(void)
+{
+    return ui32_get_nth_bit(__R31, 12);
+}
+
+/// Clear status of PRUSS system event from ARM
+static inline void reset_host_int(void)
+{
+    CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 }
