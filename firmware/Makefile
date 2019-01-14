@@ -1,15 +1,16 @@
 PRU_CGT_ROOT = /usr/share/ti/cgt-pru/
 PRU_RPMSG_ROOT = /usr/lib/ti/pru-software-support-package/
+ARM_LINUX_ROOT = /usr/include/arm-linux-gnueabihf/
 CFLAGS = -v3 --endian=little --hardware_mac=on
 INCLUDES = \
 	--include_path=$(PRU_CGT_ROOT)include \
 	--include_path=$(PRU_RPMSG_ROOT)include \
 	--include_path=$(PRU_RPMSG_ROOT)include/am335x \
-	--include_path=/usr/include/arm-linux-gnueabihf/
+	--include_path=$(ARM_LINUX_ROOT)
 PRU0_SRC = pru0.c
 PRU0_OBJECT = output/pru0.object
 LINKER_CMD_SRC = AM335x_PRU.cmd
-LIBS = -l$(PRU_RPMSG_ROOT)lib/rpmsg_lib.lib
+LIBS = -l$(PRU_RPMSG_ROOT)lib/rpmsg_lib.lib -l$(PRU_CGT_ROOT)/lib/libc.a
 
 PHONY := pru0
 pru0: $(PRU0_SRC) $(LINKER_CMD_SRC)
