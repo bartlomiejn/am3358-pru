@@ -9,16 +9,6 @@
 #include "binary.h"
 #include "resource_table_0.h"
 
-static bool get_P8_15(void);
-static bool get_P8_21(void);
-static void set_P8_11(bool value);
-static void set_P8_20(bool value);
-static void setup_ocp(void);
-static void setup_rpmsg(void);
-static void setup_cycle_counter(void);
-static void reset_host_int(void);
-static void run_main_loop(void);
-
 /* Host-0 Interrupt sets bit 30 in register R31 */
 #define HOST_INT                    ((uint32_t) 1 << 30)
 /*
@@ -41,33 +31,40 @@ static void run_main_loop(void);
  */
 #define VIRTIO_CONFIG_S_DRIVER_OK   4
 
+#define S_TO_NS_RATIO 1_000_000_000
+#define CYCLE_TIME_NS 5
+#define RPMSG_MSG_SIZE 396
+
+static void set_P8_11(bool value);
+static void set_P8_20(bool value);
+static bool get_P8_15(void);
+static bool get_P8_21(void);
+static void setup_ocp(void);
+static void setup_rpmsg(void);
+static void setup_cycle_counter(void);
+static void reset_host_int(void);
+static void run_main_loop(void);
+
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport transport;
+uint8_t rpmsg_receive_buf[RPMSG_MSG_SIZE], rpmsg_send_buf[RPMSG_MSG_SIZE];
+uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
+bool last_p8_15, last_p8_21;
 
 int main(void)
 {
     set_P8_11(true);
     set_P8_20(true);
-    bool last_p8_15 = get_P8_15();
-    bool last_p8_21 = get_P8_21();
+    last_p8_15 = get_P8_15();
+    last_p8_21 = get_P8_21();
     setup_ocp();
     setup_rpmsg();
     setup_cycle_counter();
     run_main_loop();
     __halt();
     return 0;
-}
-
-static bool get_P8_15(void)
-{
-    return ui32_get_nth_bit(__R31, 15);
-}
-
-static bool get_P8_21(void)
-{
-    return ui32_get_nth_bit(__R31, 12);
 }
 
 static void set_P8_11(bool value)
@@ -78,6 +75,16 @@ static void set_P8_11(bool value)
 static void set_P8_20(bool value)
 {
     r32_set_nth_bit(&__R30, 13, (int)value);
+}
+
+static bool get_P8_15(void)
+{
+    return ui32_get_nth_bit(__R31, 15);
+}
+
+static bool get_P8_21(void)
+{
+    return ui32_get_nth_bit(__R31, 12);
 }
 
 /// Setup OCP master port access for accessing external memories
@@ -122,25 +129,58 @@ static void reset_host_int(void)
     CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 }
 
-uint8_t receive_buf[396];
+// static void set_P8_11(bool value);
+// static void set_P8_20(bool value);
+// static bool get_P8_15(void);
+// static bool get_P8_21(void);
+//
+// static void update_switch1()
+// {
+//     if (last_p8_15 != get_P8_15())
+//     {
+//
+//     }
+// }
+//
+// static void update_switch2()
+// {
+//
+// }
+
+static int16_t receive_from_arm()
+{
+    return pru_rpmsg_receive(
+        &transport,
+        &rpmsg_src,
+        &rpmsg_dst,
+        rpmsg_receive_buf,
+        &rpmsg_receive_len
+    );
+}
+
+static void send_to_arm(char* message)
+{
+    return pru_rpmsg_send(
+        &transport,
+        rpmsg_dst,
+        rpmsg_src,
+        message,
+        strlen(message)
+    );
+}
 
 static void run_main_loop(void)
 {
-    uint16_t src, dst, len;
-    char *message = "Arbitrary message";
     while (true)
     {
         if (__R31 & HOST_INT)
         {
             reset_host_int();
-            while (pru_rpmsg_receive(
-                &transport,
-                &src,
-                &dst,
-                receive_buf,
-                &len
-            ) == PRU_RPMSG_SUCCESS) {
-                pru_rpmsg_send(&transport, dst, src, message, strlen(message));
+            while (receive_from_arm() == PRU_RPMSG_SUCCESS) {
+                memset(rpmsg_send_buf, 0, RPMSG_MSG_SIZE);
+                double time = PRU0_CTRL.CYCLE * CYCLE_TIME_NS / S_TO_NS_RATIO;
+                sprintf(rpmsg_send_buf, "Time since cycle reset: %f\n", time);
+                send_to_arm(rpmsg_send_buf);
             }
         }
     }
