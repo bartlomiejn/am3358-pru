@@ -1,3 +1,6 @@
+#ifndef _RPMSG_H_
+#define _RPMSG_H_
+
 #include <pru_rpmsg.h>
 #include "resource_table_0.h"
 
@@ -29,6 +32,8 @@ static struct pru_rpmsg_transport rpmsg_transport;
 uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ], rpmsg_send_buf[RPMSG_MSG_SZ];
 uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
 
-void rpmsg_setup();
+void rpmsg_setup(void);
 uint8_t rpmsg_get_from_arm(void);
 void rpmsg_send_to_arm(char *message);
+
+#endif

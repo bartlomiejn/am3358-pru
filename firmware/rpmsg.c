@@ -1,7 +1,7 @@
 #include <string.h>
 #include "rpmsg.h"
 
-void setup_rpmsg(void)
+void rpmsg_setup(void)
 {
     status = &resource_table.rpmsg_vdev.status;
     while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
@@ -22,7 +22,7 @@ void setup_rpmsg(void)
 }
 
 /// Attempts to receive a message over RPMsg.
-uint8_t attempt_receive_from_arm(void)
+uint8_t rpmsg_get_from_arm(void)
 {
     return pru_rpmsg_receive(
         &rpmsg_transport,
@@ -34,7 +34,7 @@ uint8_t attempt_receive_from_arm(void)
 }
 
 /// Sends message to ARM over RPMsg
-void send_to_arm(char *message)
+void rpmsg_send_to_arm(char *message)
 {
     pru_rpmsg_send(
         &rpmsg_transport,

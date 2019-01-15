@@ -1,3 +1,6 @@
+#ifndef _UTILS_H_
+#define _UTILS_H_
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -57,3 +60,5 @@ void print_as_ascii(char *string, char *ascii_buf)
         *(ascii_buf + j - 1) = 32;
     }
 }
+
+#endif

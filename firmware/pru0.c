@@ -17,17 +17,14 @@ void reduce_cycles_and_update_switch1(void);
 void handle_switch1_p8_15_change(bool switch1_curr_p8_15);
 void handle_query_from_arm(void);
 
-// PRU Registers
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-// Switch 1
 bool switch1_last_p8_15;
 uint32_t switch1_start_cycle = 0;
 int32_t switch1_curr_ms = 0;
 int32_t switch1_last_ms = -1;
 
-// Switch 2
 bool switch2_last_p8_21;
 
 int main(void)
