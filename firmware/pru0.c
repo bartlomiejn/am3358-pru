@@ -19,7 +19,8 @@ void handle_query_from_arm(void);
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
-
+const char* switch1_id = "switch1";
+const char* switch2_id = "switch2";
 bool switch1_last_p8_15;
 uint32_t switch1_start_cycle = 0;
 int32_t switch1_curr_ms = 0;
@@ -53,15 +54,11 @@ int main(void)
     while (true)
     {
         if (are_cycles_past_threshold())
-        {
             reduce_cycles_and_update_switch1();
-        }
 
         bool switch1_curr_p8_15 = (__R31 >> 15) & 1;
         if (switch1_curr_p8_15 != switch1_last_p8_15)
-        {
             handle_switch1_p8_15_change(switch1_curr_p8_15);
-        }
 
         // If received a host0 interrupt
         if (__R31 & HOST_INT)
@@ -69,9 +66,7 @@ int main(void)
             // Reset the host0 interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
             while (rpmsg_get_from_arm() == RPMSG_RECEIVED)
-            {
                 handle_query_from_arm();
-            }
         }
     };
 }
@@ -103,9 +98,6 @@ void handle_switch1_p8_15_change(bool switch1_curr_p8_15)
     switch1_curr_ms = 0;
 }
 
-static const char* switch1_id = "switch1";
-static const char* switch2_id = "switch2";
-
 bool is_switch1_id(char *str)
 {
     return strncmp(str, switch1_id, strlen(switch1_id)) == 0;
@@ -116,13 +108,34 @@ bool is_switch2_id(char *str)
     return strncmp(str, switch2_id, strlen(switch2_id)) == 0;
 }
 
-/// Handles receiving a message from ARM over RPMsg.
+// bool switch1_last_p8_15;
+// uint32_t switch1_start_cycle = 0;
+// int32_t switch1_curr_ms = 0;
+// int32_t switch1_last_ms = -1;
+
 void handle_query_from_arm(void)
 {
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
-        char status_buf[64];
-        i32_to_string(switch1_last_ms, status_buf);
+        char status_buf[256];
+        i32_to_str(switch1_last_ms, status_buf);
+        strcat(status_buf, " last, ")
+
+        char curr_ms[16];
+        i32_to_str(switch1_last_ms, curr_ms);
+        strcat(status_buf, curr_ms);
+        strcat(status_buf, " curr, ")
+
+        char start_cyc[16];
+        ui32_to_str(switch1_start_cycle, start_cyc);
+        strcat(status_buf, start_cyc);
+        strcat(status_buf, " start cyc, ")
+
+        char last_p8_15[16];
+        i32_to_str((int)switch1_last_p8_15, last_p8_15);
+        strcat(status_buf, last_p8_15);
+        strcat(status_buf, " last p8 15")
+
         rpmsg_send_to_arm(status_buf);
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))

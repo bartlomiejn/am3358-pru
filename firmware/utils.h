@@ -6,33 +6,52 @@
 #include <stdint.h>
 #include <string.h>
 
-/// Converts uint32_t to a string.
-///
-/// Replacement for `sprintf` which makes the executable
-/// bigger than allowed size and `itoa` which is unimplemented.
-void i32_to_string(int32_t n, char *buffer)
+void ui32_to_str(uint32_t n, char *buffer)
 {
     int i = 0;
-    bool is_neg = n<0;
-    uint32_t abs_n = is_neg ? -n : n;
-    while(abs_n != 0)
+    while (n != 0)
     {
-        buffer[i++] = abs_n % 10 + '0';
-        abs_n=abs_n / 10;
-    }
-    if(is_neg)
-    {
-        buffer[i++] = '-';
+        buffer[i++] = n % 10 + '0';
+        n = n / 10;
     }
     buffer[i] = '\0';
     int t;
-    for(t = 0; t < i / 2; t++)
+    for (t = 0; t < i / 2; t++)
     {
         buffer[t] ^= buffer[i - t - 1];
         buffer[i - t - 1] ^= buffer[t];
         buffer[t] ^= buffer[i - t - 1];
     }
-    if(n == 0)
+    if (n == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+    }
+}
+
+void i32_to_str(int32_t n, char *buffer)
+{
+    int i = 0;
+    bool is_neg = n<0;
+    uint32_t abs_n = is_neg ? -n : n;
+    while (abs_n != 0)
+    {
+        buffer[i++] = abs_n % 10 + '0';
+        abs_n = abs_n / 10;
+    }
+    if (is_neg)
+    {
+        buffer[i++] = '-';
+    }
+    buffer[i] = '\0';
+    int t;
+    for (t = 0; t < i / 2; t++)
+    {
+        buffer[t] ^= buffer[i - t - 1];
+        buffer[i - t - 1] ^= buffer[t];
+        buffer[t] ^= buffer[i - t - 1];
+    }
+    if (n == 0)
     {
         buffer[0] = '0';
         buffer[1] = '\0';

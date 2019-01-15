@@ -29,7 +29,6 @@ void rpmsg_setup(void)
     ) != PRU_RPMSG_SUCCESS);
 }
 
-/// Attempts to receive a message over RPMsg.
 uint8_t rpmsg_get_from_arm(void)
 {
     return pru_rpmsg_receive(
@@ -41,7 +40,6 @@ uint8_t rpmsg_get_from_arm(void)
     );
 }
 
-/// Sends message to ARM over RPMsg
 void rpmsg_send_to_arm(char *message)
 {
     pru_rpmsg_send(
