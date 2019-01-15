@@ -43,7 +43,7 @@ int main(void)
     CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
 
     // Setup RPMsg
-    setup_rpmsg();
+    rpmsg_setup();
 
     // Get initial GPI states
     switch1_last_p8_15 = (__R31 >> 15) & 1;

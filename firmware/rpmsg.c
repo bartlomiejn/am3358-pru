@@ -1,3 +1,4 @@
+#include <string.h>
 #include "rpmsg.h"
 
 void setup_rpmsg(void)
