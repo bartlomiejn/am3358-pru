@@ -1,9 +1,6 @@
 #ifndef _RPMSG_H_
 #define _RPMSG_H_
 
-#include <pru_rpmsg.h>
-#include "resource_table_0.h"
-
 /* Host-0 Interrupt sets bit 30 in register R31 */
 #define HOST_INT                    ((uint32_t) 1 << 30)
 /*

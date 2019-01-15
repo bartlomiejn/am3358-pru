@@ -1,10 +1,12 @@
 #include <string.h>
+#include <pru_rpmsg.h>
 #include "rpmsg.h"
+#include "resource_table_0.h"
 
-volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
-static struct pru_rpmsg_transport rpmsg_transport;
 uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ];
-uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
+static volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
+static struct pru_rpmsg_transport rpmsg_transport;
+static uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
 
 void rpmsg_setup(void)
 {
