@@ -122,8 +122,8 @@ void handle_query_from_arm(void)
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
         char status_buf[64];
-        i32_to_string(switch1_last_ms, buf);
-        rpmsg_send_to_arm("1");
+        i32_to_string(switch1_last_ms, status_buf);
+        rpmsg_send_to_arm(status_buf);
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))
     {
