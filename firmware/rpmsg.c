@@ -1,6 +1,11 @@
 #include <string.h>
 #include "rpmsg.h"
 
+volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
+static struct pru_rpmsg_transport rpmsg_transport;
+uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ];
+uint16_t rpmsg_src, rpmsg_dst, rpmsg_receive_len;
+
 void rpmsg_setup(void)
 {
     status = &resource_table.rpmsg_vdev.status;
