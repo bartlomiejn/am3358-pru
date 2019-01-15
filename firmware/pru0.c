@@ -69,7 +69,7 @@ int main(void)
         {
             // Reset the host0 interrupt
             CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST_SYS_EVENT;
-            while (rpmsg_get_from_arm() == PRU_RPMSG_SUCCESS)
+            while (rpmsg_get_from_arm() == RPMSG_RECEIVED)
             {
                 handle_query_from_arm();
             }

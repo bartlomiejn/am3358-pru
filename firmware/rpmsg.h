@@ -25,6 +25,7 @@
 
 #define RPMSG_MSG_SZ 396
 
+extern const int RPMSG_RECEIVED;
 extern uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ];
 
 void rpmsg_setup(void);

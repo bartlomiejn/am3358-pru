@@ -3,6 +3,7 @@
 #include "rpmsg.h"
 #include "resource_table_0.h"
 
+const int RPMSG_RECEIVED = PRU_RPMSG_SUCCESS;
 uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ];
 static volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 static struct pru_rpmsg_transport rpmsg_transport;
