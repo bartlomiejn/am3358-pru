@@ -72,7 +72,7 @@ void print_as_ascii(char *string, char *ascii_buf)
             break;
         }
         memset(int_buf, 0, 16);
-        i32_to_string(ptr[i], int_buf);
+        i32_to_str(ptr[i], int_buf);
         strcat(ascii_buf + j, int_buf);
         i++;
         j += strlen(int_buf) + 1;
