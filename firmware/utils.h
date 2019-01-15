@@ -8,6 +8,11 @@
 
 void ui32_to_str(uint32_t n, char *buffer)
 {
+    if (n == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+    }
     int i = 0;
     while (n != 0)
     {
@@ -22,21 +27,16 @@ void ui32_to_str(uint32_t n, char *buffer)
         buffer[i - t - 1] ^= buffer[t];
         buffer[t] ^= buffer[i - t - 1];
     }
-    if (n == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-    }
 }
 
 void i32_to_str(int32_t n, char *buffer)
 {
     int i = 0;
-    bool is_neg = n<0;
-    uint32_t abs_n = is_neg ? -n : n;
+    bool is_neg = n < 0;
+    int32_t abs_n = is_neg ? -n : n;
     while (abs_n != 0)
     {
-        buffer[i++] = abs_n % 10 + '0';
+        buffer[i++] = (uint8_t)(abs_n % 10) + '0';
         abs_n = abs_n / 10;
     }
     if (is_neg)
@@ -61,7 +61,7 @@ void i32_to_str(int32_t n, char *buffer)
 void print_as_ascii(char *string, char *ascii_buf)
 {
     char int_buf[16];
-    int i, j = 0;
+    int i = 0, j = 0;
     uint8_t *ptr = (uint8_t*)string;
     while (true)
     {

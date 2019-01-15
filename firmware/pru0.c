@@ -118,11 +118,14 @@ void handle_query_from_arm(void)
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
         char status_buf[256];
-        i32_to_str(switch1_last_ms, status_buf);
-        strcpy(status_buf, " last, ");
+
+        char last_ms[16];
+        i32_to_str(switch1_last_ms, last_ms);
+        strcpy(status_buf, last_ms);
+        strcat(status_buf, " last, ");
 
         char curr_ms[16];
-        i32_to_str(switch1_last_ms, curr_ms);
+        i32_to_str(switch1_curr_ms, curr_ms);
         strcat(status_buf, curr_ms);
         strcat(status_buf, " curr, ");
 
