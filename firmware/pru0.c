@@ -171,12 +171,12 @@ static const char* switch2_id = "switch2";
 
 bool is_switch1_id(char *str)
 {
-    return strncmp((char*)str, switch1_id, strlen(switch1_id)) == 0;
+    return strncmp(str, switch1_id, strlen(switch1_id)) == 0;
 }
 
 bool is_switch2_id(char *str)
 {
-    return strncmp((char*)str, switch2_id, strlen(switch2_id)) == 0;
+    return strncmp(str, switch2_id, strlen(switch2_id)) == 0;
 }
 
 /// Handles receiving a message from ARM over RPMsg.
@@ -185,15 +185,15 @@ void handle_query_from_arm(void)
     char message[256];
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
-        strcpy(message, "Switch 1");
+        send_to_arm("1");
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))
     {
-        strcpy(message, "Switch 2");
+        send_to_arm("2");
     }
     else
     {
-        strcpy(message, "Unrecognized");
+        send_to_arm("U");
     }
 
     // i32_to_string(strlen((char*)rpmsg_receive_buf), message);
@@ -206,8 +206,8 @@ void handle_query_from_arm(void)
     // );
     // strcat(message, strcmp_buf);
     // strcat(message, " strncmp 7 chars diff");
-
-    send_to_arm(message);
+    //
+    // send_to_arm(message);
 }
 
 /// Sends message to ARM over RPMsg
