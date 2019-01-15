@@ -2,7 +2,7 @@ PRU_CGT_ROOT = /usr/share/ti/cgt-pru/
 PRU_RPMSG_ROOT = /usr/lib/ti/pru-software-support-package/
 ARM_LINUX_ROOT = /usr/include/arm-linux-gnueabihf/
 OUTPUT_ROOT = output/
-CFLAGS = -v3 --endian=little --symdebug:none -Os -O4 -pm
+CFLAGS = -v3 --endian=little
 INCLUDES = \
 	--include_path=$(PRU_CGT_ROOT)include \
 	--include_path=$(PRU_RPMSG_ROOT)include \
@@ -22,15 +22,18 @@ pru0: $(PRU0_SRC) $(LINKER_CMD_SRC)
 	clpru -z $(LFLAGS) $(LINKER_CMD_SRC) -i $(CGT_PRU_ROOT)lib -o \
 		$(OUTPUT_ROOT)$(PRU0_FIRMWARE) $(PRU0_OBJECT) $(LIBS)
 
-FIRMWARE_DIR = /lib/firmware/
+PRU0 = remoteproc1
+PRU0_DEV_STATE = /sys/class/remoteproc/$(PRU0)/state
+PRU0_DEV_FIRMWARE = /sys/class/remoteproc/$(PRU0)/firmware
+FIRMWARE_ROOT = /lib/firmware/
 PHONY += install
 install:
 	# TODO: Add root check
-	rm $(FIRMWARE_DIR)$(PRU0_FIRMWARE)
-	cp $(OUTPUT_ROOT)$(PRU0_FIRMWARE) $(FIRMWARE_DIR)
-	echo 'stop' > /sys/class/remoteproc/remoteproc1/state
-	echo 'am335x-pru0-fw' > /sys/class/remoteproc/remoteproc1/firmware
-	echo 'start' > /sys/class/remoteproc/remoteproc1/state
+	rm -f $(FIRMWARE_ROOT)$(PRU0_FIRMWARE)
+	cp $(OUTPUT_ROOT)$(PRU0_FIRMWARE) $(FIRMWARE_ROOT)$(PRU0_FIRMWARE)
+	echo stop > $(PRU0_DEV_STATE)
+	echo am335x-pru0-fw > $(PRU0_DEV_FIRMWARE) 
+	echo start > $(PRU0_DEV_STATE)
 
 PHONY += clean
 clean:

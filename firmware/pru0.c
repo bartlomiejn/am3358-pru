@@ -22,8 +22,8 @@
  * at linux-x.y.z/drivers/rpmsg/rpmsg_pru.c
  */
 #define CHAN_NAME                   "rpmsg-pru"
-#define CHAN_DESC                   "Channel 31"
-#define CHAN_PORT                   31
+#define CHAN_DESC                   "Channel 30"
+#define CHAN_PORT                   30
 /*
  * Used to make sure the Linux drivers are ready for RPMsg communication
  * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
@@ -85,6 +85,7 @@ int main(void)
         TO_ARM_HOST_SYS_EVENT,
         FROM_ARM_HOST_SYS_EVENT
     );
+
     while (pru_rpmsg_channel(
         RPMSG_NS_CREATE,
         &rpmsg_transport,
@@ -174,25 +175,19 @@ uint8_t attempt_receive_from_arm()
     );
 }
 
+uint32_t count = 0;
+
 /// Handles receiving a message from ARM over RPMsg.
 void handle_query_from_arm()
 {
-    memset(rpmsg_send_buf, 0, RPMSG_MSG_SZ);
-    if (strcmp((char*)rpmsg_receive_buf, "switch1"))
-    {
-        ui32_to_string(switch1_last_ms, (char*)rpmsg_send_buf);
-        send_to_arm((char*)rpmsg_send_buf);
-    }
-    else if (strcmp((char*)rpmsg_receive_buf, "switch2"))
-    {
-        // TODO: Handle querying for switch_2 state
-    }
-    else
-    {
-        char message[] = "Valid queries:\nswitch1 - returns the interval between last state changes in miliseconds, -1 if never happened.\n";
-        strcpy((char*)rpmsg_send_buf, message);
-        send_to_arm(rpmsg_send_buf);
-    }
+    char message[256];
+    char strcmp_buf[256];
+    ui32_to_string(strlen(rpmsg_receive_buf), message);
+    strcat(message, " strlen, ");
+    ui32_to_string(strcmp(rpmsg_receive_buf, "switch1"), strcmp_buf);
+    strcat(message, strcmp_buf);
+    strcat(message, " strcmp diff"); 
+    send_to_arm(message);  
 }
 
 /// Sends message to ARM over RPMsg
@@ -211,7 +206,7 @@ void send_to_arm(char *message)
 ///
 /// Replacement for `sprintf` which makes the executable
 /// bigger than allowed size and `itoa` which is unimplemented.
-void ui32_to_string(uint32_t n, char *buffer)
+void i32_to_string(int32_t n, char *buffer)
 {
     if(n == 0)
     {
@@ -219,12 +214,19 @@ void ui32_to_string(uint32_t n, char *buffer)
         buffer[1] = '\0';
         return;
     }
+    bool is_neg = n < 0;
+    uint32_t abs_n = is_neg ? -n : n;
     int i = 0;
-    while(n != 0)
+    while(abs_n != 0)
     {
-        buffer[i] = 48 + (n % 10);
+        buffer[i] = 48 + (abs_n % 10);
         i++;
-        n /= 10;
+        abs_n /= 10;
+    }
+    if (is_neg)
+    {
+        buffer[i] = "-";
+        i++;
     }
     buffer[i] = '\0';
     int t;
