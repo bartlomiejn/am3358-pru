@@ -119,22 +119,22 @@ void handle_query_from_arm(void)
     {
         char status_buf[256];
         i32_to_str(switch1_last_ms, status_buf);
-        strcat(status_buf, " last, ")
+        strcat(status_buf, " last, ");
 
         char curr_ms[16];
         i32_to_str(switch1_last_ms, curr_ms);
         strcat(status_buf, curr_ms);
-        strcat(status_buf, " curr, ")
+        strcat(status_buf, " curr, ");
 
         char start_cyc[16];
         ui32_to_str(switch1_start_cycle, start_cyc);
         strcat(status_buf, start_cyc);
-        strcat(status_buf, " start cyc, ")
+        strcat(status_buf, " start cyc, ");
 
         char last_p8_15[16];
         i32_to_str((int)switch1_last_p8_15, last_p8_15);
         strcat(status_buf, last_p8_15);
-        strcat(status_buf, " last p8 15")
+        strcat(status_buf, " last p8 15");
 
         rpmsg_send_to_arm(status_buf);
     }
