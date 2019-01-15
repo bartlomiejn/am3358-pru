@@ -10,7 +10,6 @@ INCLUDES = \
 	--include_path=$(ARM_LINUX_ROOT)
 PRU0_SRC = pru0.c
 PRU0_OBJECT = $(OUTPUT_ROOT)pru0.object
-LFLAGS = --map_file=output/pru0.map
 LINKER_CMD_SRC = AM335x_PRU.cmd
 LIBS = -l$(PRU_RPMSG_ROOT)lib/rpmsg_lib.lib -l$(PRU_CGT_ROOT)lib/libc.a
 PRU0_FIRMWARE = am335x-pru0-fw
@@ -19,7 +18,7 @@ PHONY := pru0
 pru0: $(PRU0_SRC) $(LINKER_CMD_SRC)
 	mkdir -p output
 	clpru $(CFLAGS) $(INCLUDES) -fe $(PRU0_OBJECT) $(PRU0_SRC)
-	clpru -z $(LFLAGS) $(LINKER_CMD_SRC) -i $(CGT_PRU_ROOT)lib -o \
+	clpru -z $(LINKER_CMD_SRC) -i $(CGT_PRU_ROOT)lib -o \
 		$(OUTPUT_ROOT)$(PRU0_FIRMWARE) $(PRU0_OBJECT) $(LIBS)
 
 PRU0 = remoteproc1
@@ -32,7 +31,7 @@ install:
 	rm -f $(FIRMWARE_ROOT)$(PRU0_FIRMWARE)
 	cp $(OUTPUT_ROOT)$(PRU0_FIRMWARE) $(FIRMWARE_ROOT)$(PRU0_FIRMWARE)
 	echo stop > $(PRU0_DEV_STATE)
-	echo am335x-pru0-fw > $(PRU0_DEV_FIRMWARE) 
+	echo am335x-pru0-fw > $(PRU0_DEV_FIRMWARE)
 	echo start > $(PRU0_DEV_STATE)
 
 PHONY += clean
