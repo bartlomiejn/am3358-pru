@@ -186,8 +186,8 @@ void handle_query_from_arm()
     strcat(message, " strlen, ");
     ui32_to_string(strcmp(rpmsg_receive_buf, "switch1"), strcmp_buf);
     strcat(message, strcmp_buf);
-    strcat(message, " strcmp diff"); 
-    send_to_arm(message);  
+    strcat(message, " strcmp diff");
+    send_to_arm(message);
 }
 
 /// Sends message to ARM over RPMsg
@@ -208,32 +208,28 @@ void send_to_arm(char *message)
 /// bigger than allowed size and `itoa` which is unimplemented.
 void i32_to_string(int32_t n, char *buffer)
 {
-    if(n == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-        return;
-    }
-    bool is_neg = n < 0;
-    uint32_t abs_n = is_neg ? -n : n;
     int i = 0;
+    bool is_neg = n<0;
+    uint32_t abs_n = is_neg ? -n : n;
     while(abs_n != 0)
     {
-        buffer[i] = 48 + (abs_n % 10);
-        i++;
-        abs_n /= 10;
+        buffer[i++] = abs_n % 10 + '0';
+        abs_n=abs_n / 10;
     }
-    if (is_neg)
+    if(is_neg)
     {
-        buffer[i] = "-";
-        i++;
+        buffer[i++] = '-';
     }
     buffer[i] = '\0';
-    int t;
-    for(t = 0; t < i / 2; t++)
+    for(int t = 0; t < i / 2; t++)
     {
         buffer[t] ^= buffer[i - t - 1];
         buffer[i - t - 1] ^= buffer[t];
         buffer[t] ^= buffer[i - t - 1];
+    }
+    if(n == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
     }
 }
