@@ -42,7 +42,7 @@ void handle_switch1_p8_15_change(bool switch1_curr_p8_15);
 uint8_t attempt_receive_from_arm();
 void handle_query_from_arm();
 void send_to_arm(char *message);
-void ui32_to_string(uint32_t n, char *buffer);
+void i32_to_string(int32_t n, char *buffer);
 
 // PRU Registers
 volatile register uint32_t __R30;
@@ -182,9 +182,9 @@ void handle_query_from_arm()
 {
     char message[256];
     char strcmp_buf[256];
-    ui32_to_string(strlen(rpmsg_receive_buf), message);
+    i32_to_string(strlen(rpmsg_receive_buf), message);
     strcat(message, " strlen, ");
-    ui32_to_string(strcmp(rpmsg_receive_buf, "switch1"), strcmp_buf);
+    i32_to_string(strcmp(rpmsg_receive_buf, "switch1"), strcmp_buf);
     strcat(message, strcmp_buf);
     strcat(message, " strcmp diff");
     send_to_arm(message);
@@ -221,7 +221,8 @@ void i32_to_string(int32_t n, char *buffer)
         buffer[i++] = '-';
     }
     buffer[i] = '\0';
-    for(int t = 0; t < i / 2; t++)
+    int t;
+    for(t = 0; t < i / 2; t++)
     {
         buffer[t] ^= buffer[i - t - 1];
         buffer[i - t - 1] ^= buffer[t];
