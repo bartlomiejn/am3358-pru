@@ -113,14 +113,15 @@ bool is_switch2_id(char *str)
 // int32_t switch1_curr_ms = 0;
 // int32_t switch1_last_ms = -1;
 
+char buff[32];
+
 void handle_query_from_arm(void)
 {
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
-        char last_ms[256];
-        i32_to_str(switch1_last_ms, last_ms);
-        strcat(last_ms, " last, ");
-        rpmsg_send_to_arm(last_ms);
+        i32_to_str(switch1_last_ms, buff);
+        strcat(buff, " last");
+        rpmsg_send_to_arm(buff);
 
         // char curr_ms[16];
         // i32_to_str(switch1_curr_ms, curr_ms);
