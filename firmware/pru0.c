@@ -122,20 +122,20 @@ void handle_query_from_arm(void)
         strcat(last_ms, " last, ");
         rpmsg_send_to_arm(last_ms);
 
-        char curr_ms[16];
-        i32_to_str(switch1_curr_ms, curr_ms);
-        strcat(curr_ms, " curr, ");
-        rpmsg_send_to_arm(last_ms);
-
-        char start_cyc[16];
-        ui32_to_str(switch1_start_cycle, start_cyc);
-        strcat(start_cyc, " start cyc, ");
-        rpmsg_send_to_arm(start_cyc);
-
-        char last_p8_15[16];
-        i32_to_str((int)switch1_last_p8_15, last_p8_15);
-        strcat(last_p8_15, " last p8 15");
-        rpmsg_send_to_arm(last_p8_15);
+        // char curr_ms[16];
+        // i32_to_str(switch1_curr_ms, curr_ms);
+        // strcat(curr_ms, " curr, ");
+        // rpmsg_send_to_arm(last_ms);
+        //
+        // char start_cyc[16];
+        // ui32_to_str(switch1_start_cycle, start_cyc);
+        // strcat(start_cyc, " start cyc, ");
+        // rpmsg_send_to_arm(start_cyc);
+        //
+        // char last_p8_15[16];
+        // i32_to_str((int)switch1_last_p8_15, last_p8_15);
+        // strcat(last_p8_15, " last p8 15");
+        // rpmsg_send_to_arm(last_p8_15);
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))
     {
