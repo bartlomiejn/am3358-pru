@@ -119,7 +119,7 @@ void handle_query_from_arm(void)
     {
         char status_buf[256];
         i32_to_str(switch1_last_ms, status_buf);
-        strcat(status_buf, " last, ");
+        strcpy(status_buf, " last, ");
 
         char curr_ms[16];
         i32_to_str(switch1_last_ms, curr_ms);
