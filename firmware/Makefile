@@ -25,12 +25,12 @@ pru0: $(PRU0_SRC) $(LINKER_CMD_SRC)
 FIRMWARE_DIR = /lib/firmware/
 PHONY += install
 install:
-	# TODO: Add root check
+	# TODO: Add checks for root and whether the PRU is actually running before stopping
 	rm $(FIRMWARE_DIR)$(PRU0_FIRMWARE)
 	cp $(OUTPUT_ROOT)$(PRU0_FIRMWARE) $(FIRMWARE_DIR)
-	echo 'stop' > /sys/class/remoteproc/remoteproc1/state
-	echo 'am335x-pru0-fw' > /sys/class/remoteproc/remoteproc1/firmware
-	echo 'start' > /sys/class/remoteproc/remoteproc1/state
+	echo 'stop' > /sys/class/remoteproc/remoteproc0/state
+	echo 'am335x-pru0-fw' > /sys/class/remoteproc/remoteproc0/firmware
+	echo 'start' > /sys/class/remoteproc/remoteproc0/state
 
 PHONY += clean
 clean:
