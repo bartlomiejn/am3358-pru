@@ -7,6 +7,7 @@
 #include <pru_intc.h>
 #include <pru_rpmsg.h>
 #include "resource_table_0.h"
+#include "utils.h"
 
 /* Host-0 Interrupt sets bit 30 in register R31 */
 #define HOST_INT                    ((uint32_t) 1 << 30)
@@ -42,7 +43,6 @@ void handle_switch1_p8_15_change(bool switch1_curr_p8_15);
 uint8_t attempt_receive_from_arm();
 void handle_query_from_arm();
 void send_to_arm(char *message);
-void i32_to_string(int32_t n, char *buffer);
 
 // PRU Registers
 volatile register uint32_t __R30;
@@ -181,12 +181,31 @@ uint32_t count = 0;
 void handle_query_from_arm()
 {
     char message[256];
-    char strcmp_buf[256];
     i32_to_string(strlen(rpmsg_receive_buf), message);
     strcat(message, " strlen, ");
+
+    char strcmp_buf[256];
     i32_to_string(strcmp(rpmsg_receive_buf, "switch1"), strcmp_buf);
     strcat(message, strcmp_buf);
-    strcat(message, " strcmp diff");
+    strcat(message, " strcmp diff, ascii: ");
+
+    char ascii_buf[256];
+    char int_buf[16];
+    int i = 0;
+    uint8_t *ptr = rpmsg_receive_buf;
+    while (true)
+    {
+        if (*ptr[i] == "/0")
+        {
+            ascii_buf[i] = "/0"
+            break;
+        }
+        memset(int_buf, 0, 16);
+        i32_to_string(*ptr[i], int_buf);
+        ascii_buf[i] = int_buf;
+        i++;
+    }
+
     send_to_arm(message);
 }
 
@@ -200,37 +219,4 @@ void send_to_arm(char *message)
         message,
         strlen(message)
     );
-}
-
-/// Converts uint32_t to a string.
-///
-/// Replacement for `sprintf` which makes the executable
-/// bigger than allowed size and `itoa` which is unimplemented.
-void i32_to_string(int32_t n, char *buffer)
-{
-    int i = 0;
-    bool is_neg = n<0;
-    uint32_t abs_n = is_neg ? -n : n;
-    while(abs_n != 0)
-    {
-        buffer[i++] = abs_n % 10 + '0';
-        abs_n=abs_n / 10;
-    }
-    if(is_neg)
-    {
-        buffer[i++] = '-';
-    }
-    buffer[i] = '\0';
-    int t;
-    for(t = 0; t < i / 2; t++)
-    {
-        buffer[t] ^= buffer[i - t - 1];
-        buffer[i - t - 1] ^= buffer[t];
-        buffer[t] ^= buffer[i - t - 1];
-    }
-    if(n == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-    }
 }
