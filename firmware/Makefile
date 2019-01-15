@@ -35,6 +35,7 @@ install:
 
 PHONY += clean
 clean:
+	rm *.obj
 	rm output/*
 
 .PHONY: $(PHONY)
