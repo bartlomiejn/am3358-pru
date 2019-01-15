@@ -169,14 +169,14 @@ uint8_t attempt_receive_from_arm(void)
 static const char* switch1_id = "switch1";
 static const char* switch2_id = "switch2";
 
-void is_switch1_id(char *str)
+bool is_switch1_id(char *str)
 {
-    return strncmp((char*)str, switch1_id, strlen(switch1_id)) == 0
+    return strncmp((char*)str, switch1_id, strlen(switch1_id)) == 0;
 }
 
-void is_switch2_id(char *str)
+bool is_switch2_id(char *str)
 {
-    return strncmp((char*)str, switch2_id, strlen(switch2_id)) == 0
+    return strncmp((char*)str, switch2_id, strlen(switch2_id)) == 0;
 }
 
 /// Handles receiving a message from ARM over RPMsg.
