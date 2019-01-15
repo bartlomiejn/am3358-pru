@@ -36,12 +36,11 @@
 #define MS_PER_THRESHOLD 20000
 #define CYCLES_PER_MS 200000
 
-void set_initial_switches_state();
-bool are_cycles_past_threshold();
-void reduce_cycles_and_update_switch1();
+bool are_cycles_past_threshold(void);
+void reduce_cycles_and_update_switch1(void);
 void handle_switch1_p8_15_change(bool switch1_curr_p8_15);
-uint8_t attempt_receive_from_arm();
-void handle_query_from_arm();
+uint8_t attempt_receive_from_arm(void);
+void handle_query_from_arm(void);
 void send_to_arm(char *message);
 
 // PRU Registers
@@ -85,7 +84,6 @@ int main(void)
         TO_ARM_HOST_SYS_EVENT,
         FROM_ARM_HOST_SYS_EVENT
     );
-
     while (pru_rpmsg_channel(
         RPMSG_NS_CREATE,
         &rpmsg_transport,
@@ -94,8 +92,9 @@ int main(void)
         CHAN_PORT
     ) != PRU_RPMSG_SUCCESS);
 
-    // Setup initial switch info state
-    set_initial_switches_state();
+    // Get initial GPI states
+    switch1_last_p8_15 = (__R31 >> 15) & 1;
+    switch2_last_p8_21 = (__R31 >> 12) & 1;
 
     // Setup and reset cycle counter
     PRU0_CTRL.CYCLE = 0;
@@ -128,23 +127,15 @@ int main(void)
     };
 }
 
-/// Get initial GPI states: P8_15 (bit 15 of R31) and P8_21 (bit 12 of
-/// R31).
-void set_initial_switches_state()
-{
-    switch1_last_p8_15 = (__R31 >> 15) & 1;
-    switch2_last_p8_21 = (__R31 >> 12) & 1;
-}
-
 /// Are cycles approaching the 4 bil threshold value, which is fairly close to
 /// uint32_t bounds
-bool are_cycles_past_threshold()
+bool are_cycles_past_threshold(void)
 {
     return PRU0_CTRL.CYCLE > CYCLE_THRESHOLD;
 }
 
 /// Reduce cycle count and update switch1 counters
-void reduce_cycles_and_update_switch1()
+void reduce_cycles_and_update_switch1(void)
 {
     PRU0_CTRL.CTRL_bit.CTR_EN = 0;
     PRU0_CTRL.CYCLE -= CYCLE_THRESHOLD;
@@ -164,7 +155,7 @@ void handle_switch1_p8_15_change(bool switch1_curr_p8_15)
 }
 
 /// Attempts to receive a message over RPMsg.
-uint8_t attempt_receive_from_arm()
+uint8_t attempt_receive_from_arm(void)
 {
     return pru_rpmsg_receive(
         &rpmsg_transport,
@@ -175,22 +166,46 @@ uint8_t attempt_receive_from_arm()
     );
 }
 
-uint32_t count = 0;
+static const char* switch1_id = "switch1";
+static const char* switch2_id = "switch2";
+
+void is_switch1_id(char *str)
+{
+    return strncmp((char*)str, switch1_id, strlen(switch1_id)) == 0
+}
+
+void is_switch2_id(char *str)
+{
+    return strncmp((char*)str, switch2_id, strlen(switch2_id)) == 0
+}
 
 /// Handles receiving a message from ARM over RPMsg.
-void handle_query_from_arm()
+void handle_query_from_arm(void)
 {
     char message[256];
-    i32_to_string(strlen(rpmsg_receive_buf), message);
-    strcat(message, " strlen, ");
+    if (is_switch1_id((char*)rpmsg_receive_buf))
+    {
+        strcpy(message, "Switch 1");
+    }
+    else if (is_switch2_id((char*)rpmsg_receive_buf))
+    {
+        strcpy(message, "Switch 2");
+    }
+    else
+    {
+        strcpy(message, "Unrecognized");
+    }
 
-    char strcmp_buf[256];
-    i32_to_string(
-        strncmp(rpmsg_receive_buf, "switch1", strlen("switch1")),
-        strcmp_buf
-    );
-    strcat(message, strcmp_buf);
-    strcat(message, " strncmp 7 chars diff");
+    // i32_to_string(strlen((char*)rpmsg_receive_buf), message);
+    // strcat(message, " strlen, ");
+    //
+    // char strcmp_buf[256];
+    // i32_to_string(
+    //     strncmp((char*)rpmsg_receive_buf, switch1_id, strlen(switch1_id)),
+    //     strcmp_buf
+    // );
+    // strcat(message, strcmp_buf);
+    // strcat(message, " strncmp 7 chars diff");
 
     send_to_arm(message);
 }
