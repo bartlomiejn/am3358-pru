@@ -24,7 +24,6 @@ bool switch1_last_p8_15;
 uint32_t switch1_start_cycle = 0;
 int32_t switch1_curr_ms = 0;
 int32_t switch1_last_ms = -1;
-
 bool switch2_last_p8_21;
 
 int main(void)
@@ -122,7 +121,9 @@ void handle_query_from_arm(void)
 {
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
-        rpmsg_send_to_arm("1");
+        char status_buf[64];
+        i32_to_string(switch1_last_ms, status_buf);
+        rpmsg_send_to_arm(status_buf);
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))
     {
@@ -130,6 +131,6 @@ void handle_query_from_arm(void)
     }
     else
     {
-        rpmsg_send_to_arm("U");
+        rpmsg_send_to_arm("Unrecognized, try: switch1, switch2");
     }
 }
