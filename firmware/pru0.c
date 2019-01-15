@@ -185,26 +185,12 @@ void handle_query_from_arm()
     strcat(message, " strlen, ");
 
     char strcmp_buf[256];
-    i32_to_string(strcmp(rpmsg_receive_buf, "switch1"), strcmp_buf);
+    i32_to_string(
+        strncmp(rpmsg_receive_buf, "switch1", strlen("switch1")),
+        strcmp_buf
+    );
     strcat(message, strcmp_buf);
-    strcat(message, " strcmp diff, ascii: ");
-
-    char ascii_buf[256];
-    char int_buf[16];
-    int i = 0;
-    uint8_t *ptr = rpmsg_receive_buf;
-    while (true)
-    {
-        if (*ptr[i] == "/0")
-        {
-            ascii_buf[i] = "/0"
-            break;
-        }
-        memset(int_buf, 0, 16);
-        i32_to_string(*ptr[i], int_buf);
-        ascii_buf[i] = int_buf;
-        i++;
-    }
+    strcat(message, " strncmp 7 chars diff");
 
     send_to_arm(message);
 }
