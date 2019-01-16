@@ -7,6 +7,9 @@
 #include "rpmsg.h"
 #include "resource_table_0.h"
 
+bool _is_host0_int_set(void);
+void _reset_host0_int(void);
+
 const int RPMSG_RECEIVED = PRU_RPMSG_SUCCESS;
 const int RPMSG_NOT_CONNECTED = PRU_RPMSG_NO_KICK;
 uint8_t rpmsg_receive_buf[RPMSG_MSG_SZ];
@@ -16,9 +19,6 @@ volatile uint8_t *status = &resource_table.rpmsg_vdev.status;
 struct pru_rpmsg_transport transport;
 uint16_t src, dst, receive_len;
 bool is_connected;
-
-bool _is_host0_int_set(void);
-void _reset_host0_int(void);
 
 void rpmsg_setup(void)
 {

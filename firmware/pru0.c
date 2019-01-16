@@ -69,19 +69,19 @@ void reduce_cycles_and_update_switch1(void)
 
 void on_pre_switch1_change(void)
 {
-    send_state("pre-switch1-change: ");
+    // send_state("pre-switch1-change: ");
 }
 
 void on_post_switch1_change(void)
 {
-    send_state("post-switch1-change: ");
+    // send_state("post-switch1-change: ");
 }
 
 void handle_rpmsg(void)
 {
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
-        send_state("switch1: ");
+        send_state("");
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))
     {
@@ -100,33 +100,33 @@ void send_state(char *message)
 
     char last_ms[16];
     i32_to_str(switch1->_switch1_last_ms, last_ms);
-    strcat(last_ms, " last");
+    strcat(last_ms, " last ");
     strcat(buff, last_ms);
 
     char curr_ms[16];
     i32_to_str(switch1->_switch1_curr_ms, curr_ms);
-    strcat(curr_ms, " curr, ");
+    strcat(curr_ms, " curr ");
     strcat(buff, curr_ms);
 
     char curr_cyc_plus[32];
     ui32_to_str(switch1->_switch1_curr_cyc_plus, curr_cyc_plus);
-    strcat(curr_cyc_plus, " plus curr cyc, ");
+    strcat(curr_cyc_plus, " + cyc ");
     strcat(buff, curr_cyc_plus);
 
     char curr_cyc_in_ms[16];
     ui32_to_str(switch1->_switch1_curr_cyc_in_ms, curr_cyc_in_ms);
-    strcat(curr_cyc_in_ms, " plus curr as ms, ");
+    strcat(curr_cyc_in_ms, " + ms ");
     strcat(buff, curr_cyc_in_ms);
 
     char start_cyc[32];
     ui32_to_str(switch1->_switch1_start_cyc, start_cyc);
-    strcat(start_cyc, " start cyc, ");
+    strcat(start_cyc, " start ");
     strcat(buff, start_cyc);
 
-    char last_p8_15[16];
-    i32_to_str((int)switch1->_state, last_p8_15);
-    strcat(last_p8_15, " last p8 15");
-    strcat(buff, last_p8_15);
+    // char last_p8_15[16];
+    // i32_to_str((int)switch1->_state, last_p8_15);
+    // strcat(last_p8_15, " last");
+    // strcat(buff, last_p8_15);
 
     rpmsg_send(buff);
 }
