@@ -71,6 +71,16 @@ int main(void)
     };
 }
 
+bool is_switch1_id(char *str)
+{
+    return strncmp(str, switch1_id, strlen(switch1_id)) == 0;
+}
+
+bool is_switch2_id(char *str)
+{
+    return strncmp(str, switch2_id, strlen(switch2_id)) == 0;
+}
+
 /// Are cycles approaching the 4 bil threshold value, which is fairly close to
 /// uint32_t bounds
 bool are_cycles_past_threshold(void)
@@ -88,55 +98,69 @@ void reduce_cycles_and_update_switch1(void)
     switch1_curr_ms += MS_PER_THRESHOLD;
 }
 
+char buff[256];
+uint32_t switch1_curr_cyc_plus = 0;
+uint32_t switch1_curr_cyc_in_ms = 0;
+
+void send_state(char *message)
+{
+    strcpy(buff, message);
+
+    char last_ms[16];
+    i32_to_str(switch1_last_ms, last_ms);
+    strcat(last_ms, " last");
+    strcat(buff, last_ms);
+
+    char curr_ms[16];
+    i32_to_str(switch1_curr_ms, curr_ms);
+    strcat(curr_ms, " curr, ");
+    strcat(buff, curr_ms);
+
+    char curr_cyc_plus[32];
+    ui32_to_str(switch1_curr_cyc_plus, curr_cyc_plus);
+    strcat(curr_cyc_plus, " plus curr cyc, ");
+    strcat(buff, curr_cyc_plus);
+
+    char curr_cyc_in_ms[16];
+    ui32_to_str(switch1_curr_cyc_in_ms, curr_cyc_in_ms);
+    strcat(curr_cyc_in_ms, " plus curr as ms, ");
+    strcat(buff, curr_cyc_in_ms);
+
+    char start_cyc[32];
+    ui32_to_str(switch1_start_cycle, start_cyc);
+    strcat(start_cyc, " start cyc, ");
+    strcat(buff, start_cyc);
+
+    char last_p8_15[16];
+    i32_to_str((int)switch1_last_p8_15, last_p8_15);
+    strcat(last_p8_15, " last p8 15");
+    strcat(buff, last_p8_15);
+
+    rpmsg_send_to_arm(buff);
+}
+
 void handle_switch1_p8_15_change(bool switch1_curr_p8_15)
 {
+    send_state("pre-switch1-change: ");
+
     uint32_t curr_cycle = PRU0_CTRL.CYCLE;
     switch1_last_p8_15 = switch1_curr_p8_15;
-    switch1_last_ms = switch1_curr_ms
-        + ((curr_cycle - switch1_start_cycle) / CYCLES_PER_MS);
+
+    switch1_curr_cyc_plus = curr_cycle - switch1_start_cycle;
+    switch1_curr_cyc_in_ms = switch1_curr_cyc_plus / CYCLES_PER_MS;
+    switch1_last_ms = switch1_curr_ms + switch1_curr_cyc_in_ms;
+
     switch1_start_cycle = curr_cycle;
     switch1_curr_ms = 0;
+
+    send_state("post-switch1-change: ");
 }
-
-bool is_switch1_id(char *str)
-{
-    return strncmp(str, switch1_id, strlen(switch1_id)) == 0;
-}
-
-bool is_switch2_id(char *str)
-{
-    return strncmp(str, switch2_id, strlen(switch2_id)) == 0;
-}
-
-// bool switch1_last_p8_15;
-// uint32_t switch1_start_cycle = 0;
-// int32_t switch1_curr_ms = 0;
-// int32_t switch1_last_ms = -1;
-
-char buff[32];
 
 void handle_query_from_arm(void)
 {
     if (is_switch1_id((char*)rpmsg_receive_buf))
     {
-        i32_to_str(switch1_last_ms, buff);
-        strcat(buff, " last");
-        rpmsg_send_to_arm(buff);
-
-        // char curr_ms[16];
-        // i32_to_str(switch1_curr_ms, curr_ms);
-        // strcat(curr_ms, " curr, ");
-        // rpmsg_send_to_arm(last_ms);
-        //
-        // char start_cyc[16];
-        // ui32_to_str(switch1_start_cycle, start_cyc);
-        // strcat(start_cyc, " start cyc, ");
-        // rpmsg_send_to_arm(start_cyc);
-        //
-        // char last_p8_15[16];
-        // i32_to_str((int)switch1_last_p8_15, last_p8_15);
-        // strcat(last_p8_15, " last p8 15");
-        // rpmsg_send_to_arm(last_p8_15);
+        send_state("switch1: ");
     }
     else if (is_switch2_id((char*)rpmsg_receive_buf))
     {

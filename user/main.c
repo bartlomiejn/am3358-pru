@@ -20,12 +20,12 @@ int main(void)
 		return -1;
 	}
 	printf("Opened %s\n", DEVICE_NAME);
-    if (write(pollfd.fd, "switch1", 7) != 7)
+    if (pwrite(pollfd.fd, "switch1", 7) != 7)
     {
         printf("Write error");
     }
     printf("Sent switch1");
-    while (read_status = read(pollfd.fd, read_buf, BUF_SIZE) > 0)
+    while (read_status = pread(pollfd.fd, read_buf, BUF_SIZE) > 0)
     {
         printf("Received %d, read_buf: %s", read_status, read_buf);
     }
