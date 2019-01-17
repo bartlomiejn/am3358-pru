@@ -3,7 +3,6 @@
 #include "switch1.h"
 
 #define CYCLES_PER_MS 200000
-#define DEBOUNCE_MS 100
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -21,8 +20,7 @@ bool is_switch1_id(char *str)
 void switch1_init(
     struct switch1* self,
     struct cycle_counter* counter,
-    struct debouncer* debouncer,
-    callback on_change
+    struct debouncer* debouncer
 ){
     set_p8_11(1);
     self->counter = counter;
@@ -31,7 +29,6 @@ void switch1_init(
     self->last_change_ms = -1;
     self->curr_change_ms = 0;
     self->curr_change_cyc = 0;
-    self->on_change = on_change;
     self->update = &switch1_update;
 }
 
@@ -75,7 +72,6 @@ void switch1_update(struct switch1 *self)
             self->state = curr_state;
             self->last_change_ms = self->curr_change_ms;
             self->curr_change_ms = 0;
-            self->on_change();
         }
     }
     // If no state change

@@ -8,8 +8,6 @@
 
 #define _SWITCH1_ID "switch1"
 
-typedef void (*callback)(void);
-
 struct switch1
 {
     struct cycle_counter* counter;
@@ -18,7 +16,6 @@ struct switch1
     int32_t last_change_ms;
     int32_t curr_change_ms;
     uint32_t curr_change_cyc;
-    callback on_change;
     void (*update)(struct switch1* switch1);
 };
 
@@ -26,8 +23,7 @@ bool is_switch1_id(char *str);
 void switch1_init(
     struct switch1* self,
     struct cycle_counter* counter,
-    struct debouncer* debouncer,
-    callback on_change
+    struct debouncer* debouncer
 );
 void switch1_deinit(struct switch1* self);
 

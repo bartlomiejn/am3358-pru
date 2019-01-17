@@ -40,7 +40,6 @@ volatile register uint32_t __R31;
 static volatile uint8_t *status;
 static struct pru_rpmsg_transport transport;
 static uint16_t src, dst, len;
-static bool is_connected = false;
 
 void rpmsg_setup(void)
 {
@@ -79,10 +78,6 @@ void rpmsg_try_receive(void (*handler)(void))
             &len
         ) == PRU_RPMSG_SUCCESS)
         {
-            if (!is_connected)
-            {
-                is_connected = true;
-            }
             handler();
         }
     }
@@ -90,13 +85,13 @@ void rpmsg_try_receive(void (*handler)(void))
 
 uint8_t rpmsg_send(char *message)
 {
-    return is_connected ? pru_rpmsg_send(
+    return pru_rpmsg_send(
         &transport,
         dst,
         src,
         message,
         strlen(message)
-    ) : RPMSG_NOT_CONNECTED;
+    );
 }
 
 bool is_host0_int_set(void)
