@@ -9,7 +9,7 @@
 #include "switch2.h"
 #include "utils.h"
 
-#define DEBOUNCE_MS 100
+#define DEBOUNCE_MS 200
 
 void on_switch1_change(void);
 void on_rpmsg_receive(void);
