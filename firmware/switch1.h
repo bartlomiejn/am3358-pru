@@ -3,29 +3,32 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "cycle_counter.h"
 #include "debouncer.h"
 
 #define _SWITCH1_ID "switch1"
 
+typedef void (*callback)(void);
+
 struct switch1
 {
-    bool state;
+    struct cycle_counter* counter;
     struct debouncer* debouncer;
-    void (*update)(struct switch1* self, uint32_t curr_cyc);
-
-    // TODO: Remove all this once working
-    uint32_t _last_change_cyc;
-    uint32_t _switch1_start_cyc;
-    int32_t _switch1_curr_ms;
-    uint32_t _switch1_curr_cyc_plus;
-    uint32_t _switch1_curr_cyc_in_ms;
-    int32_t _switch1_last_ms;
-    void (*on_will_change)(void);
-    void (*on_did_change)(void);
+    bool state;
+    int32_t last_change_ms;
+    int32_t curr_change_ms;
+    uint32_t curr_change_cyc;
+    callback on_change;
+    void (*update)(struct switch1* switch1);
 };
 
 bool is_switch1_id(char *str);
-void switch1_init(struct switch1* self, void (*on_will_change)(void), void (*on_did_change)(void));
+void switch1_init(
+    struct switch1* self,
+    struct cycle_counter* counter,
+    struct debouncer* debouncer,
+    callback on_change
+);
 void switch1_deinit(struct switch1* self);
 
 #endif

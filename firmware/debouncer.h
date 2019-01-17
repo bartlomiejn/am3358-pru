@@ -8,11 +8,16 @@ struct debouncer
 {
     bool is_stable;
     uint32_t interval_ms;
-    int32_t _start_cycle;
-    bool (*debounce)(struct debouncer* self, uint32_t cycle);
+    uint32_t reset_thresh;
+    uint32_t _start_cycle;
+    void (*debounce)(struct debouncer* self, uint32_t cycle);
 };
 
-void debouncer_init(struct debouncer* self, uint32_t interval_ms);
+void debouncer_init(
+    struct debouncer* self,
+    uint32_t interval_ms,
+    uint32_t reset_thresh
+);
 void debouncer_deinit(struct debouncer* self);
 
 #endif
