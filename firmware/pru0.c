@@ -28,27 +28,23 @@ struct switch2* switch2;
 int main(void)
 {
     rpmsg_setup();
-    switch1_init(switch1);
+    switch1_init(switch1, &on_pre_switch1_change, &on_post_switch1_change);
     switch2_init(switch2);
-
     // Setup and reset cycle counter
     PRU0_CTRL.CYCLE = 0;
     PRU0_CTRL.CTRL_bit.CTR_EN = 1;
-
     while (true)
     {
         if (are_cycles_past_threshold())
         {
             reduce_cycles_and_update_switch1();
         }
-        switch1->update(
-            switch1,
-            PRU0_CTRL.CYCLE,
-            &on_pre_switch1_change,
-            &on_post_switch1_change
-        );
+        switch1->update(switch1, PRU0_CTRL.CYCLE);
         rpmsg_try_receive(&handle_rpmsg);
     };
+    switch1_deinit(switch1);
+    switch2_deinit(switch2);
+    return 0;
 }
 
 /// Are cycles approaching the 4 bil threshold value, which is fairly close to
@@ -69,12 +65,12 @@ void reduce_cycles_and_update_switch1(void)
 
 void on_pre_switch1_change(void)
 {
-    // send_state("pre-switch1-change: ");
+    send_state("presw1: ");
 }
 
 void on_post_switch1_change(void)
 {
-    // send_state("post-switch1-change: ");
+    send_state("postsw1: ");
 }
 
 void handle_rpmsg(void)
@@ -123,10 +119,10 @@ void send_state(char *message)
     strcat(start_cyc, " start ");
     strcat(buff, start_cyc);
 
-    // char last_p8_15[16];
-    // i32_to_str((int)switch1->_state, last_p8_15);
-    // strcat(last_p8_15, " last");
-    // strcat(buff, last_p8_15);
+    char last_p8_15[16];
+    i32_to_str((int)switch1->state, last_p8_15);
+    strcat(last_p8_15, " last");
+    strcat(buff, last_p8_15);
 
     rpmsg_send(buff);
 }
