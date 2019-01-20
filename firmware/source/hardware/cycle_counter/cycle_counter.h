@@ -7,13 +7,11 @@
 struct cycle_counter
 {
     uint32_t reset_thresh;
+    uint32_t cycles_per_ms;
     void (*reset)(struct cycle_counter* self);
     void (*start)(struct cycle_counter* self);
     void (*update)(struct cycle_counter* self);
     uint32_t (*cycle)(struct cycle_counter* self);
 };
-
-void cycle_counter_init(struct cycle_counter* self);
-void cycle_counter_deinit(struct cycle_counter* self);
 
 #endif
