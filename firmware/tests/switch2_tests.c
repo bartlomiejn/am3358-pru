@@ -30,13 +30,7 @@ static void setup()
         mock_counter.cycles_per_ms,
         mock_counter.reset_thresh
     );
-    switch2_init(
-        &switch2,
-        &mock_counter,
-        &debouncer,
-        &mock_gpi,
-        &mock_gpo
-    );
+    switch2_init(&switch2, &mock_counter, &debouncer, &mock_gpi, &mock_gpo);
 }
 
 static void teardown() {}
@@ -172,7 +166,7 @@ static char *Given1And50msAnd0AndDebounce_WhenGetLastChange_Then50ms(void)
     mock_cycle_count = CYCS_50MS;
     mock_gpi_value = 0;
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS * CYCS_DEBOUNCE;
+    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE;
     switch2.update(&switch2);
     test_assert(switch2.last_on_ms == 50);
     return 0;

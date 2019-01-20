@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
 #include "switch1.h"
 
 void switch1_update(struct switch1 *self);

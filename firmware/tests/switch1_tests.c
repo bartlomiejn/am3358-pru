@@ -31,13 +31,7 @@ static void setup(void)
         mock_counter.cycles_per_ms,
         mock_counter.reset_thresh
     );
-    switch1_init(
-        &switch1,
-        &mock_counter,
-        &debouncer,
-        &mock_gpi,
-        &mock_gpo
-    );
+    switch1_init(&switch1, &mock_counter, &debouncer, &mock_gpi, &mock_gpo);
 }
 
 static void teardown(void) {}

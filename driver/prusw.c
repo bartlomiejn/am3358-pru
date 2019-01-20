@@ -1,13 +1,17 @@
 #include <linux/init.h>
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/device.h>
 #include <linux/uaccess.h>
+#include <linux/rpmsg.h>
 #include <linux/fs.h>
 #include <linux/mutex.h>
 
-#define DEVICE_NAME "prusw"
 #define CLASS_NAME "prusw"
+#define DEVICE1_NAME "prusw1"
+#define DEVICE2_NAME "prusw2"
+#define DEVICE1_MINOR 0
+#define DEVICE2_MINOR 1
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Bartlomiej Nowak");
@@ -16,7 +20,8 @@ MODULE_VERSION("0.1");
 
 static int major_number;
 static struct class* prusw_class = NULL;
-static struct device* prusw_device = NULL;
+static struct device* prusw_device1 = NULL;
+static struct device* prusw_device2 = NULL;
 static DEFINE_MUTEX(prusw_mutex);
 
 static int dev_open(struct inode *, struct file *);
@@ -54,22 +59,40 @@ static int __init prusw_init(void)
     }
     printk(KERN_INFO "prusw: Device class registered\n");
 
-    prusw_device = device_create(
+    prusw_device1 = device_create(
         prusw_class,
         NULL,
-        MKDEV(major_number, 0),
+        MKDEV(major_number, DEVICE1_MINOR),
         NULL,
-        DEVICE_NAME
+        DEVICE1_NAME
     );
-    if (IS_ERR(prusw_device))
+    if (IS_ERR(prusw_device1))
     {
         class_unregister(prusw_class);
         class_destroy(prusw_class);
         unregister_chrdev(major_number, DEVICE_NAME);
-        printk(KERN_ALERT "prusw: Failed to create the device\n");
-        return PTR_ERR(prusw_device);
+        printk(KERN_ALERT "prusw: Failed to create device 1\n");
+        return PTR_ERR(prusw_device1);
     }
-    printk(KERN_INFO "prusw: Device class created\n");
+    printk(KERN_INFO "prusw: Device 1 created\n");
+
+    prusw_device2 = device_create(
+        prusw_class,
+        NULL,
+        MKDEV(major_number, DEVICE2_MINOR),
+        NULL,
+        DEVICE2_NAME
+    );
+    if (IS_ERR(prusw_device2))
+    {
+        device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
+        class_unregister(prusw_class);
+        class_destroy(prusw_class);
+        unregister_chrdev(major_number, DEVICE_NAME);
+        printk(KERN_ALERT "prusw: Failed to create device 2\n");
+        return PTR_ERR(prusw_device2);
+    }
+    printk(KERN_INFO "prusw: Device 2 created\n");
 
     mutex_init(&prusw_mutex);
 
@@ -78,7 +101,8 @@ static int __init prusw_init(void)
 
 static void __exit prusw_exit(void)
 {
-    device_destroy(prusw_class, MKDEV(major_number, 0));
+    device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
+    device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
     class_unregister(prusw_class);
     class_destroy(prusw_class);
     unregister_chrdev(major_number, DEVICE_NAME);

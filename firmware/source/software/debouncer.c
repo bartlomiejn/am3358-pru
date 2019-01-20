@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include "doubles/mock_cycle_counter.h"
 #include "debouncer.h"
 
 void debouncer_debounce(struct debouncer *self, uint32_t cycle);
@@ -26,7 +25,7 @@ void debouncer_debounce(struct debouncer *self, uint32_t cycle)
     if ((!is_overflown && (cycle - self->_start_cycle) > interval_cyc)
     || (is_overflown && self->reset_thresh - self->_start_cycle + cycle > interval_cyc))
     {
-        self->_start_cycle = -1;
+        self->_start_cycle = 0;
         self->is_stable = true;
     }
 }

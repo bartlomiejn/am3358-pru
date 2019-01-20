@@ -57,19 +57,20 @@ int main(void)
     {
         counter.update(&counter);
         switch1.update(&switch1);
-        switch2.update(&switch1);
+        switch2.update(&switch2);
         rpmsg_try_receive(&on_rpmsg_receive);
     };
 }
 
+char message[128];
+
 void on_rpmsg_receive(void)
 {
-    char message[128];
     char last_change[16];
     char last_on[16];
-    i32_to_str(switch1->last_change_ms, last_change);
-    i32_to_str(switch2->last_on_ms, last_on);
-    strcat(message, last_change);
+    i32_to_str(switch1.last_change_ms, last_change);
+    i32_to_str(switch2.last_on_ms, last_on);
+    strcpy(message, last_change);
     strcat(message, ";");
     strcat(message, last_on);
     rpmsg_send(message);
