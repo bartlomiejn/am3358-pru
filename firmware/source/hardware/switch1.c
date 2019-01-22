@@ -22,18 +22,6 @@ void switch1_init(
     self->update = &switch1_update;
 }
 
-// Set P8_11 GPO to value - R30 bit 15
-//void set_p8_11(bool value)
-//{
-//    __R30 = (__R30 & (~(1 << 15))) | (value << 15);
-//}
-//
-// Return P8_15 GPI value - R31 bit 15
-//bool get_p8_15(void)
-//{
-//    return (__R31 >> 15) & 1;
-//}
-
 void switch1_update(struct switch1 *self)
 {
     uint32_t curr_cyc = self->counter->cycle(self->counter);

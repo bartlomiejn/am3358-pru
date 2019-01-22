@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <pru_cfg.h>
 #include "software/rpmsg.h"
 #include "software/debouncer.h"
 #include "hardware/gpi/gpi_p8_15.h"
@@ -69,22 +70,23 @@ int main(void)
 
 bool should_write()
 {
-    return shared_mem[0] == 0
+    return shared_mem[0] == 0;
 }
 
 void write_state_shared_mem()
 {
     char last_change[16];
     char last_on[16];
-    int i;
     i32_to_str(switch1.last_change_ms, last_change);
     i32_to_str(switch2.last_on_ms, last_on);
     strcpy(message, last_change);
     strcat(message, ";");
     strcat(message, last_on);
-    for (i = 0; i < strlen(message); i++)
+    int i;
+    for (i = 1; i < strlen(message) + 1; i++)
     {
-        shared_mem[i] = message[i];
+        shared_mem[i] = message[i - 1];
     }
     shared_mem[i + 1] = 0;
+    shared_mem[0] = 1;
 }

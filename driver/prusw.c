@@ -3,8 +3,7 @@
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/uaccess.h>
-#include <linux/rpmsg.h>
-#include <linux/fs.h>
+#include <linux/sysfs.h>
 #include <linux/mutex.h>
 #include <linux/io.h>
 
@@ -13,192 +12,187 @@ MODULE_AUTHOR("Bartlomiej Nowak");
 MODULE_DESCRIPTION("Driver for AM335x pru-stopwatch firmware");
 MODULE_VERSION("0.1");
 
-#define CLASS_NAME      "prusw"
-#define DEVICE1_NAME    "prusw1"
-#define DEVICE2_NAME    "prusw2"
-#define DEVICE1_MINOR   0
-#define DEVICE2_MINOR   1
-
+#define DEVICE_NAME             "prusw"
 #define PRU_MEM_ADDR            0x4A300000
 #define PRU_MEM_LEN             0x80000
 #define PRU_SHAREDMEM_OFFSET    0x10000
 #define PRU_SHAREDMEM_LEN       0x3000      // 12KB
+#define SWITCH_DELIM            (char)59    // Semicolon
 
-static int major_number;
-static struct class* prusw_class = NULL;
-static struct device* prusw_device1 = NULL;
-static struct device* prusw_device2 = NULL;
-static DEFINE_MUTEX(prusw_mutex);
+typedef enum {
+    first = 0,
+    second = 1
+} switch_idx;
 
-void __iomem *pru_mem;
-uint8_t __iomem *pru_shared_mem;
+static struct device* root_dev;
+static struct device_attribute switch1_attr;
+static struct device_attribute switch2_attr;
+static DEFINE_MUTEX(sharedmem_mux);
+static void __iomem *pru_mem;
+static uint8_t __iomem *pru_sharedmem;
+static char sharedmem_buf[256];
 
-static int switch1_open(struct inode *, struct file *);
-static int switch1_release(struct inode *, struct file *);
-static ssize_t switch1_read(struct file *, char *, size_t, loff_t *);
-static ssize_t switch1_write(struct file *, const char *, size_t, loff_t *);
-
-static struct file_operations switch1_fops =
-{
-    .open = switch1_open,
-    .read = switch1_read,
-    .write = switch1_write,
-    .release = switch1_release,
-};
-
-// Module lifecycle
+static ssize_t switch1_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf
+);
+static ssize_t switch2_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf
+);
+static ssize_t switch_read(switch_idx idx, char *buf);
+static void read_sharedmem(void);
+static ssize_t read_tok(switch_idx idx, char *buf);
 
 static int __init prusw_init(void)
 {
+    int err;
+
     printk(KERN_INFO "prusw: Initializing\n");
-    major_number = register_chrdev(0, DEVICE1_NAME, &switch1_fops);
-    if (major_number < 0)
-    {
-        printk(KERN_ALERT "prusw: Failed to register a major number\n");
-        return major_number;
-    }
-    printk(KERN_INFO "prusw: Registered with major number: %d\n", major_number);
 
-    prusw_class = class_create(THIS_MODULE, CLASS_NAME);
-    if (IS_ERR(prusw_class))
+    root_dev = root_device_register(DEVICE_NAME);
+    if (root_dev == NULL)
     {
-        unregister_chrdev(major_number, DEVICE1_NAME);
-        printk(KERN_ALERT "prusw: Failed to register device class\n");
-        return PTR_ERR(prusw_class); // Return an error on a pointer
+        printk(KERN_INFO "prusw: Failed to register root device");
+        goto deinit;
     }
-    printk(KERN_INFO "prusw: Device class registered\n");
 
-    prusw_device1 = device_create(
-        prusw_class,
-        NULL,
-        MKDEV(major_number, 0),
-        NULL,
-        DEVICE1_NAME
-    );
-    if (IS_ERR(prusw_device1))
+    switch1_attr.attr.name = "switch1";
+    switch1_attr.attr.mode = 0444; // Read only
+    switch1_attr.show = switch1_read;
+    switch1_attr.store = NULL;
+    err = sysfs_create_file(&root_dev->kobj, &switch1_attr.attr);
+    if (err)
     {
-        class_unregister(prusw_class);
-        class_destroy(prusw_class);
-        unregister_chrdev(major_number, DEVICE1_NAME);
-        printk(KERN_ALERT "prusw: Failed to create device 1\n");
-        return PTR_ERR(prusw_device1);
+        printk(KERN_INFO "prusw: Failed to create switch1");
+        goto deinit_attr1;
     }
-    printk(KERN_INFO "prusw: Device 1 created\n");
 
-    // prusw_device2 = device_create(
-    //     prusw_class,
-    //     NULL,
-    //     MKDEV(major_number, DEVICE2_MINOR),
-    //     NULL,
-    //     DEVICE2_NAME
-    // );
-    // if (IS_ERR(prusw_device2))
-    // {
-    //     device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
-    //     class_unregister(prusw_class);
-    //     class_destroy(prusw_class);
-    //     unregister_chrdev(major_number, DEVICE1_NAME);
-    //     printk(KERN_ALERT "prusw: Failed to create device 2\n");
-    //     return PTR_ERR(prusw_device2);
-    // }
-    // printk(KERN_INFO "prusw: Device 2 created\n");
+    switch2_attr.attr.name = "switch2";
+    switch2_attr.attr.mode = 0444; // Read only
+    switch2_attr.show = switch2_read;
+    switch2_attr.store = NULL;
+    err = sysfs_create_file(&root_dev->kobj, &switch2_attr.attr);
+    if (err)
+    {
+        printk(KERN_INFO "prusw: Failed to create switch2");
+        goto deinit_attr2;
+    }
 
     pru_mem = ioremap(PRU_MEM_ADDR, PRU_MEM_LEN);
     if (!pru_mem)
     {
-        device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
-        // device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
-        class_unregister(prusw_class);
-        class_destroy(prusw_class);
-        unregister_chrdev(major_number, DEVICE1_NAME);
-        printk(KERN_INFO "prusw: Failed to access PRU memory");
-        return -ENOMEM;
+        printk(KERN_INFO "prusw: Failed to map PRU memory");
+        goto deinit_prumem;
     }
-    pru_shared_mem = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
-    printk(KERN_INFO "prusw: PRU memory mapped\n");
+    pru_sharedmem = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
 
-    mutex_init(&prusw_mutex);
+    mutex_init(&sharedmem_mux);
 
+    printk(KERN_INFO "prusw: Initialized\n");
     return 0;
+
+deinit_prumem:
+    sysfs_remove_file(&root_dev->kobj, &switch2_attr.attr);
+deinit_attr2:
+    sysfs_remove_file(&root_dev->kobj, &switch1_attr.attr);
+deinit_attr1:
+    root_device_unregister(root_dev);
+deinit:
+    return -1;
 }
 
 static void __exit prusw_exit(void)
 {
+    mutex_destroy(&sharedmem_mux);
     iounmap(pru_mem);
-    device_destroy(prusw_class, MKDEV(major_number, 0));
-    // device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
-    class_unregister(prusw_class);
-    class_destroy(prusw_class);
-    unregister_chrdev(major_number, DEVICE1_NAME);
-    mutex_destroy(&prusw_mutex);
+    sysfs_remove_file(&root_dev->kobj, &switch2_attr.attr);
+    sysfs_remove_file(&root_dev->kobj, &switch1_attr.attr);
+    root_device_unregister(root_dev);
     printk(KERN_INFO "prusw: Exited\n");
 }
 
-// File operations
-
-static int switch1_open(struct inode *inodep, struct file *filep)
-{
-    if (!mutex_trylock(&prusw_mutex))
-    {
-        printk(KERN_ALERT "prusw: Device in use by another process");
-        return -EBUSY;
-    }
-    return 0;
+static ssize_t switch1_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf
+){
+    return switch_read(first, buf);
 }
 
-static ssize_t switch1_read(
-    struct file *filep,
-    char *buffer,
-    size_t len,
-    loff_t *offset
+static ssize_t switch2_read(
+    struct device *dev,
+    struct device_attribute *attr,
+    char *buf
 ){
-    char buf1[256];
-    iowrite8(0, (void *)pru_shared_mem);
-    while(ioread8((void *)pru_shared_mem) == 0);
-    uint8_t i;
-    for (i = 0; i < 256; i++)
+    return switch_read(second, buf);
+}
+
+static ssize_t switch_read(switch_idx idx, char *buf)
+{
+    size_t sz;
+    if (mutex_trylock(&sharedmem_mux) != 0)
     {
-        char ch = (char)ioread8(pru_shared_mem + i);
-        buf1[i] = ch;
+        while (mutex_trylock(&sharedmem_mux) != 0);
+        sz = read_tok(idx, buf);
+        mutex_unlock(&sharedmem_mux);
+        return sz;
+    }
+    read_sharedmem();
+    sz = read_tok(idx, buf);
+    mutex_unlock(&sharedmem_mux);
+    return sz;
+}
+
+static void read_sharedmem(void)
+{
+    uint8_t i;
+    iowrite8(0, (void *)pru_sharedmem);
+    while (ioread8((void *)pru_sharedmem) == 0);
+    for (i = 1; i < 256; i++)
+    {
+        char ch = (char)ioread8(pru_sharedmem + i);
         if (ch == 0)
         {
             break;
         }
+        sharedmem_buf[i - 1] = ch;
     }
-    size_t buf1_sz = strlen(buf1);
-    size_t count = len;
-    ssize_t retval = 0;
-    unsigned long ret = 0;
-    if (*offset >= buf1_sz)
-    {
-        return retval;
-    }
-    if (*offset + len > buf1_sz)
-    {
-        count = buf1_sz - *offset;
-    }
-    ret = copy_to_user(buffer, buf1, count);
-    *offset += count - ret;
-    retval = count - ret;
-    printk(KERN_INFO "prusw: Sent %d characters\n", count);
-    return retval;
+    sharedmem_buf[i - 1] = (char)10;
+    sharedmem_buf[i] = (char)0;
 }
 
-static ssize_t switch1_write(
-    struct file *filep,
-    const char *buffer,
-    size_t len,
-    loff_t *offset
-){
-    printk(KERN_INFO "prusw: Operation unsupported");
-    return -EINVAL;
-}
-
-static int switch1_release(struct inode *inodep, struct file *filep)
+ssize_t read_tok(switch_idx idx, char *buf)
 {
-    mutex_unlock(&prusw_mutex);
-    printk(KERN_INFO "prusw: Device closed\n");
-    return 0;
+    char *char_ptr = sharedmem_buf;
+    size_t tok_sz;
+    int i = 0, start = 0;
+    switch (idx)
+    {
+        case second:
+            while (char_ptr[start] != SWITCH_DELIM)
+            {
+                start++;
+            }
+            start++;
+            while (char_ptr[start + i] != (char)0)
+            {
+                buf[i] = char_ptr[start + i];
+                i++;
+            }
+            break;
+        case first:
+            while (char_ptr[i] != SWITCH_DELIM)
+            {
+                buf[i] = char_ptr[i];
+                i++;
+            }
+    }
+    buf[i] = (char)10;
+    buf[i + 1] = (char)0;
+    return (ssize_t)i + 1;
 }
 
 module_init(prusw_init);

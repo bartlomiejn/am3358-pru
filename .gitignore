@@ -10,4 +10,5 @@ dirver/*.mod.o
 driver/.tmp_versions
 driver/*.ko.cmd
 driver/*.o.cmd
+driver/*.prusw.o.d
 firmware/*.obj

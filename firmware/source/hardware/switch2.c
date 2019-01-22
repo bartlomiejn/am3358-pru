@@ -24,18 +24,6 @@ void switch2_init(
     self->update = &switch2_update;
 }
 
-/// Set P8_20 GPO to value - R30 bit 13
-//void set_p8_20(bool value)
-//{
-//    __R30 = (__R30 & (~(1 << 13))) | (value << 13);
-//}
-//
-/// Return P8_21 GPI value - R31 bit 12
-//bool get_p8_21(void)
-//{
-//    return (__R31 >> 12) & 1;
-//}
-
 void switch2_update(struct switch2 *self)
 {
     uint32_t curr_cyc = self->counter->cycle(self->counter);
@@ -93,4 +81,3 @@ void switch2_handle_overflow(struct switch2 *self, uint32_t curr_cyc)
         self->on_cyc = curr_cyc;
     }
 }
-
