@@ -18,8 +18,8 @@
 #define CYC_RESET_THRESH    4000000000
 #define SHARED_MEM_ADDR     0x00010000
 
-void write_switches(char *message);
-void on_rpmsg_receive(void);
+bool should_write();
+void write_state_shared_mem();
 
 struct gpo p8_11;
 struct gpi p8_15;
@@ -35,7 +35,8 @@ static char message[128];
 
 int main(void)
 {
-    rpmsg_setup();
+    // Setup OCP master port
+    CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
     gpo_p8_11_init(&p8_11);
     gpi_p8_15_init(&p8_15);
     gpo_p8_12_init(&p8_12);
@@ -62,33 +63,28 @@ int main(void)
         counter.update(&counter);
         switch1.update(&switch1);
         switch2.update(&switch2);
-        if (shared_mem[0] == 0)
-        {
-            write_switches(message);
-            int i;
-            for (i = 0; i < strlen(message); i++)
-            {
-                shared_mem[i] = message[i];
-            }
-            shared_mem[i + 1] = 0;
-        }
-        rpmsg_try_receive(&on_rpmsg_receive);
+        if (should_write()) write_state_shared_mem();
     };
 }
 
-void write_switches(char *message)
+bool should_write()
+{
+    return shared_mem[0] == 0
+}
+
+void write_state_shared_mem()
 {
     char last_change[16];
     char last_on[16];
+    int i;
     i32_to_str(switch1.last_change_ms, last_change);
     i32_to_str(switch2.last_on_ms, last_on);
     strcpy(message, last_change);
     strcat(message, ";");
     strcat(message, last_on);
-}
-
-void on_rpmsg_receive(void)
-{
-    write_switches(message);
-    rpmsg_send(message);
+    for (i = 0; i < strlen(message); i++)
+    {
+        shared_mem[i] = message[i];
+    }
+    shared_mem[i + 1] = 0;
 }
