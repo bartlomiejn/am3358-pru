@@ -31,7 +31,7 @@ static struct device* prusw_device2 = NULL;
 static DEFINE_MUTEX(prusw_mutex);
 
 void __iomem *pru_mem;
-void __iomem *pru_shared_mem;
+uint8_t __iomem *pru_shared_mem;
 
 static int switch1_open(struct inode *, struct file *);
 static int switch1_release(struct inode *, struct file *);
@@ -71,7 +71,7 @@ static int __init prusw_init(void)
     prusw_device1 = device_create(
         prusw_class,
         NULL,
-        MKDEV(major_number, DEVICE1_MINOR),
+        MKDEV(major_number, 0),
         NULL,
         DEVICE1_NAME
     );
@@ -85,36 +85,36 @@ static int __init prusw_init(void)
     }
     printk(KERN_INFO "prusw: Device 1 created\n");
 
-    prusw_device2 = device_create(
-        prusw_class,
-        NULL,
-        MKDEV(major_number, DEVICE2_MINOR),
-        NULL,
-        DEVICE2_NAME
-    );
-    if (IS_ERR(prusw_device2))
-    {
-        device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
-        class_unregister(prusw_class);
-        class_destroy(prusw_class);
-        unregister_chrdev(major_number, DEVICE1_NAME);
-        printk(KERN_ALERT "prusw: Failed to create device 2\n");
-        return PTR_ERR(prusw_device2);
-    }
-    printk(KERN_INFO "prusw: Device 2 created\n");
+    // prusw_device2 = device_create(
+    //     prusw_class,
+    //     NULL,
+    //     MKDEV(major_number, DEVICE2_MINOR),
+    //     NULL,
+    //     DEVICE2_NAME
+    // );
+    // if (IS_ERR(prusw_device2))
+    // {
+    //     device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
+    //     class_unregister(prusw_class);
+    //     class_destroy(prusw_class);
+    //     unregister_chrdev(major_number, DEVICE1_NAME);
+    //     printk(KERN_ALERT "prusw: Failed to create device 2\n");
+    //     return PTR_ERR(prusw_device2);
+    // }
+    // printk(KERN_INFO "prusw: Device 2 created\n");
 
     pru_mem = ioremap(PRU_MEM_ADDR, PRU_MEM_LEN);
     if (!pru_mem)
     {
         device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
-        device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
+        // device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
         class_unregister(prusw_class);
         class_destroy(prusw_class);
         unregister_chrdev(major_number, DEVICE1_NAME);
         printk(KERN_INFO "prusw: Failed to access PRU memory");
         return -ENOMEM;
     }
-    pru_shared_mem = pru_mem + PRU_SHAREDMEM_OFFSET;
+    pru_shared_mem = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
     printk(KERN_INFO "prusw: PRU memory mapped\n");
 
     mutex_init(&prusw_mutex);
@@ -125,8 +125,8 @@ static int __init prusw_init(void)
 static void __exit prusw_exit(void)
 {
     iounmap(pru_mem);
-    device_destroy(prusw_class, MKDEV(major_number, DEVICE1_MINOR));
-    device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
+    device_destroy(prusw_class, MKDEV(major_number, 0));
+    // device_destroy(prusw_class, MKDEV(major_number, DEVICE2_MINOR));
     class_unregister(prusw_class);
     class_destroy(prusw_class);
     unregister_chrdev(major_number, DEVICE1_NAME);
@@ -153,13 +153,12 @@ static ssize_t switch1_read(
     loff_t *offset
 ){
     char buf1[256];
-    iowrite8(0, pru_shared_mem);
-    while(ioread8(pru_shared_mem) == 0);
-    uint8_t *mem = pru_shared_mem;
+    iowrite8(0, (void *)pru_shared_mem);
+    while(ioread8((void *)pru_shared_mem) == 0);
     uint8_t i;
     for (i = 0; i < 256; i++)
     {
-        char ch = (char)ioread8(mem + i);
+        char ch = (char)ioread8(pru_shared_mem + i);
         buf1[i] = ch;
         if (ch == 0)
         {

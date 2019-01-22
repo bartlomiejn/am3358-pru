@@ -16,7 +16,9 @@
 #define DEBOUNCE_MS         200
 #define CYC_PER_MS          200000
 #define CYC_RESET_THRESH    4000000000
+#define SHARED_MEM_ADDR     0x00010000
 
+void write_switches(char *message);
 void on_rpmsg_receive(void);
 
 struct gpo p8_11;
@@ -28,6 +30,8 @@ struct debouncer switch1_debouncer;
 struct debouncer switch2_debouncer;
 struct switch1 switch1;
 struct switch2 switch2;
+volatile uint8_t* shared_mem = (volatile uint8_t *)SHARED_MEM_ADDR;
+static char message[128];
 
 int main(void)
 {
@@ -58,13 +62,21 @@ int main(void)
         counter.update(&counter);
         switch1.update(&switch1);
         switch2.update(&switch2);
+        if (shared_mem[0] == 0)
+        {
+            write_switches(message);
+            int i;
+            for (i = 0; i < strlen(message); i++)
+            {
+                shared_mem[i] = message[i];
+            }
+            shared_mem[i + 1] = 0;
+        }
         rpmsg_try_receive(&on_rpmsg_receive);
     };
 }
 
-char message[128];
-
-void on_rpmsg_receive(void)
+void write_switches(char *message)
 {
     char last_change[16];
     char last_on[16];
@@ -73,5 +85,10 @@ void on_rpmsg_receive(void)
     strcpy(message, last_change);
     strcat(message, ";");
     strcat(message, last_on);
+}
+
+void on_rpmsg_receive(void)
+{
+    write_switches(message);
     rpmsg_send(message);
 }
