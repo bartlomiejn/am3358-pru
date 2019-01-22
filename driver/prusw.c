@@ -30,21 +30,20 @@ static struct device* prusw_device1 = NULL;
 static struct device* prusw_device2 = NULL;
 static DEFINE_MUTEX(prusw_mutex);
 
-void *pru_mem;
-void *pru_shared_mem;
+void __iomem *pru_mem;
+void __iomem *pru_shared_mem;
 
-static int dev_open(struct inode *, struct file *);
-static int dev_release(struct inode *, struct file *);
-static ssize_t dev_read(struct file *, char *, size_t, loff_t *);
-static ssize_t dev_write(struct file *, const char *, size_t, loff_t *);
-static void __exit prusw_exit(void);
+static int switch1_open(struct inode *, struct file *);
+static int switch1_release(struct inode *, struct file *);
+static ssize_t switch1_read(struct file *, char *, size_t, loff_t *);
+static ssize_t switch1_write(struct file *, const char *, size_t, loff_t *);
 
-static struct file_operations fops =
+static struct file_operations switch1_fops =
 {
-    .open = dev_open,
-    .read = dev_read,
-    .write = dev_write,
-    .release = dev_release,
+    .open = switch1_open,
+    .read = switch1_read,
+    .write = switch1_write,
+    .release = switch1_release,
 };
 
 // Module lifecycle
@@ -52,7 +51,7 @@ static struct file_operations fops =
 static int __init prusw_init(void)
 {
     printk(KERN_INFO "prusw: Initializing\n");
-    major_number = register_chrdev(0, DEVICE1_NAME, &fops);
+    major_number = register_chrdev(0, DEVICE1_NAME, &switch1_fops);
     if (major_number < 0)
     {
         printk(KERN_ALERT "prusw: Failed to register a major number\n");
@@ -137,7 +136,7 @@ static void __exit prusw_exit(void)
 
 // File operations
 
-static int dev_open(struct inode *inodep, struct file *filep)
+static int switch1_open(struct inode *inodep, struct file *filep)
 {
     if (!mutex_trylock(&prusw_mutex))
     {
@@ -147,33 +146,46 @@ static int dev_open(struct inode *inodep, struct file *filep)
     return 0;
 }
 
-static ssize_t dev_read(
+static ssize_t switch1_read(
     struct file *filep,
     char *buffer,
     size_t len,
     loff_t *offset
 ){
-    const char* test_msg = "prusw output test\n";
-    size_t test_msg_sz = strlen(test_msg);
+    char buf1[256];
+    iowrite8(0, pru_shared_mem);
+    while(ioread8(pru_shared_mem) == 0);
+    uint8_t *mem = pru_shared_mem;
+    uint8_t i;
+    for (i = 0; i < 256; i++)
+    {
+        char ch = (char)ioread8(mem + i);
+        buf1[i] = ch;
+        if (ch == 0)
+        {
+            break;
+        }
+    }
+    size_t buf1_sz = strlen(buf1);
     size_t count = len;
     ssize_t retval = 0;
     unsigned long ret = 0;
-    if (*offset >= test_msg_sz)
+    if (*offset >= buf1_sz)
     {
         return retval;
     }
-    if (*offset + len > test_msg_sz)
+    if (*offset + len > buf1_sz)
     {
-        count = test_msg_sz - *offset;
+        count = buf1_sz - *offset;
     }
-    ret = copy_to_user(buffer, test_msg, count);
+    ret = copy_to_user(buffer, buf1, count);
     *offset += count - ret;
     retval = count - ret;
     printk(KERN_INFO "prusw: Sent %d characters\n", count);
     return retval;
 }
 
-static ssize_t dev_write(
+static ssize_t switch1_write(
     struct file *filep,
     const char *buffer,
     size_t len,
@@ -183,7 +195,7 @@ static ssize_t dev_write(
     return -EINVAL;
 }
 
-static int dev_release(struct inode *inodep, struct file *filep)
+static int switch1_release(struct inode *inodep, struct file *filep)
 {
     mutex_unlock(&prusw_mutex);
     printk(KERN_INFO "prusw: Device closed\n");
