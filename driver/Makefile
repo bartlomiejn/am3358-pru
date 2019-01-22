@@ -6,7 +6,6 @@ PHONY = all
 all:
 	mkdir -p $(K_DIR)
 	make -C $(K_DIR) M=$(PWD) modules
-	sh ./reload_module.sh
 
 PHONY += install
 install:
