@@ -5,10 +5,10 @@ pre_reboot:
 
 PHONY += post_reboot
 post_reboot:
-	config-pin P8_11 pruout 
+	config-pin P8_11 pruout
 	config-pin P8_15 pruin
-	config-pin P8_20 pruout 
-	config-pin P8_21 pruin
+	config-pin P8_12 pruout
+	config-pin P8_16 pruin
 	sudo apt-get update
 	sudo apt-get install linux-headers-$(shell uname -r)
 

@@ -3,6 +3,6 @@
 
 #include "gpo.h"
 
-void gpo_p8_20_init(struct gpo* self);
+void gpo_p8_12_init(struct gpo* self);
 
 #endif

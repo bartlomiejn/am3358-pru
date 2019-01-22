@@ -3,6 +3,6 @@
 
 #include "gpi.h"
 
-void gpi_p8_21_init(struct gpi* self);
+void gpi_p8_16_init(struct gpi* self);
 
 #endif

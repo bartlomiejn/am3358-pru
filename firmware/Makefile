@@ -14,8 +14,8 @@ SHARED_SRC = \
 PRU0_SRC = \
 	$(SOFTWARE_DIR)rpmsg.c \
 	$(CYCLE_COUNTER_DIR)pru_cycle_counter.c \
-	$(GPI_DIR)gpi_p8_15.c $(GPI_DIR)gpi_p8_21.c \
-	$(GPO_DIR)gpo_p8_11.c $(GPO_DIR)gpo_p8_20.c \
+	$(GPI_DIR)gpi_p8_15.c $(GPI_DIR)gpi_p8_16.c \
+	$(GPO_DIR)gpo_p8_11.c $(GPO_DIR)gpo_p8_12.c \
 	$(SOURCE_ROOT)pru0.c
 CFLAGS = -v3 --endian=little -fs=$(OUTPUT_ROOT) -fr=$(OUTPUT_ROOT)
 INCLUDES = \
