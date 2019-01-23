@@ -5,6 +5,7 @@
 #include <linux/uaccess.h>
 #include <linux/sysfs.h>
 #include <linux/mutex.h>
+#include <linux/string.h>
 #include <linux/io.h>
 
 MODULE_LICENSE("Dual MIT/GPL");
@@ -17,7 +18,7 @@ MODULE_VERSION("0.1");
 #define PRU_MEM_LEN             0x80000
 #define PRU_SHAREDMEM_OFFSET    0x10000
 #define PRU_SHAREDMEM_LEN       0x3000      // 12KB
-#define SWITCH_DELIM            (char)59    // Semicolon
+#define SWITCH_STATE_LEN        32
 
 typedef enum {
     first = 0,
@@ -27,10 +28,13 @@ typedef enum {
 static struct device* root_dev;
 static struct device_attribute switch1_attr;
 static struct device_attribute switch2_attr;
-static DEFINE_MUTEX(sharedmem_mux);
 static void __iomem *pru_mem;
-static uint8_t __iomem *pru_sharedmem;
-static char sharedmem_buf[256];
+static uint8_t __iomem *pru_switch1_bit;
+static uint8_t __iomem *pru_switch1_state;
+static uint8_t __iomem *pru_switch2_bit;
+static uint8_t __iomem *pru_switch2_state;
+static DEFINE_MUTEX(switch1_mux);
+static DEFINE_MUTEX(switch2_mux);
 
 static ssize_t switch1_read(
     struct device *dev,
@@ -42,9 +46,6 @@ static ssize_t switch2_read(
     struct device_attribute *attr,
     char *buf
 );
-static ssize_t switch_read(switch_idx idx, char *buf);
-static void read_sharedmem(void);
-static ssize_t read_tok(switch_idx idx, char *buf);
 
 static int __init prusw_init(void)
 {
@@ -87,11 +88,15 @@ static int __init prusw_init(void)
         printk(KERN_INFO "prusw: Failed to map PRU memory");
         goto deinit_prumem;
     }
-    pru_sharedmem = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
+    pru_switch1_bit = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
+    pru_switch1_state = pru_switch1_bit + 1;
+    pru_switch2_bit = pru_switch1_state + SWITCH_STATE_LEN;
+    pru_switch2_state = pru_switch2_bit + 1;
 
-    mutex_init(&sharedmem_mux);
+    mutex_init(&switch1_mux);
+    mutex_init(&switch2_mux);
 
-    printk(KERN_INFO "prusw: Initialized\n");
+    printk(KERN_INFO "prusw: Initialized");
     return 0;
 
 deinit_prumem:
@@ -106,7 +111,8 @@ deinit:
 
 static void __exit prusw_exit(void)
 {
-    mutex_destroy(&sharedmem_mux);
+    mutex_destroy(&switch2_mux);
+    mutex_destroy(&switch1_mux);
     iounmap(pru_mem);
     sysfs_remove_file(&root_dev->kobj, &switch2_attr.attr);
     sysfs_remove_file(&root_dev->kobj, &switch1_attr.attr);
@@ -119,7 +125,27 @@ static ssize_t switch1_read(
     struct device_attribute *attr,
     char *buf
 ){
-    return switch_read(first, buf);
+    ssize_t len;
+    if (mutex_trylock(&switch1_mux) == 0)
+    {
+        return -EBUSY;
+    }
+    iowrite8(0, (void *)pru_switch1_bit);
+    while (ioread8((void *)pru_switch1_bit) == 0);
+    for (len = 0; len < SWITCH_STATE_LEN; len++)
+    {
+        char ch = (char)ioread8(pru_switch1_state + len);
+        if (ch == 0)
+        {
+            printk(KERN_INFO "prusw: switch1_read read char: null");
+            break;
+        }
+        buf[len] = ch;
+        printk(KERN_INFO "prusw: switch1_read read char: %c", ch);
+    }
+    buf[len + 1] = (char)0;
+    mutex_unlock(&switch1_mux);
+    return len;
 }
 
 static ssize_t switch2_read(
@@ -127,72 +153,27 @@ static ssize_t switch2_read(
     struct device_attribute *attr,
     char *buf
 ){
-    return switch_read(second, buf);
-}
-
-static ssize_t switch_read(switch_idx idx, char *buf)
-{
-    size_t sz;
-    if (mutex_trylock(&sharedmem_mux) != 0)
+    ssize_t len;
+    if (mutex_trylock(&switch2_mux) == 0)
     {
-        while (mutex_trylock(&sharedmem_mux) != 0);
-        sz = read_tok(idx, buf);
-        mutex_unlock(&sharedmem_mux);
-        return sz;
+        return -EBUSY;
     }
-    read_sharedmem();
-    sz = read_tok(idx, buf);
-    mutex_unlock(&sharedmem_mux);
-    return sz;
-}
-
-static void read_sharedmem(void)
-{
-    uint8_t i;
-    iowrite8(0, (void *)pru_sharedmem);
-    while (ioread8((void *)pru_sharedmem) == 0);
-    for (i = 1; i < 256; i++)
+    iowrite8(0, (void *)pru_switch2_bit);
+    while (ioread8((void *)pru_switch2_bit) == 0);
+    for (len = 0; len < SWITCH_STATE_LEN; len++)
     {
-        char ch = (char)ioread8(pru_sharedmem + i);
+        char ch = (char)ioread8(pru_switch2_state + len);
         if (ch == 0)
         {
+            printk(KERN_INFO "prusw: switch2_read read char: null");
             break;
         }
-        sharedmem_buf[i - 1] = ch;
+        buf[len] = ch;
+        printk(KERN_INFO "prusw: switch2_read read char: %c", ch);
     }
-    sharedmem_buf[i - 1] = (char)10;
-    sharedmem_buf[i] = (char)0;
-}
-
-ssize_t read_tok(switch_idx idx, char *buf)
-{
-    char *char_ptr = sharedmem_buf;
-    size_t tok_sz;
-    int i = 0, start = 0;
-    switch (idx)
-    {
-        case second:
-            while (char_ptr[start] != SWITCH_DELIM)
-            {
-                start++;
-            }
-            start++;
-            while (char_ptr[start + i] != (char)0)
-            {
-                buf[i] = char_ptr[start + i];
-                i++;
-            }
-            break;
-        case first:
-            while (char_ptr[i] != SWITCH_DELIM)
-            {
-                buf[i] = char_ptr[i];
-                i++;
-            }
-    }
-    buf[i] = (char)10;
-    buf[i + 1] = (char)0;
-    return (ssize_t)i + 1;
+    buf[len + 1] = (char)0;
+    mutex_unlock(&switch2_mux);
+    return len;
 }
 
 module_init(prusw_init);

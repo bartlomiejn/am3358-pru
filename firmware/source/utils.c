@@ -3,6 +3,39 @@
 #include <stdbool.h>
 #include "utils.h"
 
+#define _I32_TO_STR(n, buffer) \
+{ \
+    int i = 0; \
+    bool is_neg = n < 0; \
+    int32_t abs_n = is_neg ? -n : n; \
+    while (abs_n != 0) \
+    { \
+        buffer[i++] = (uint8_t)(abs_n % 10) + '0'; \
+        abs_n = abs_n / 10; \
+    } \
+    if (is_neg) \
+    { \
+        buffer[i++] = '-'; \
+    } \
+    buffer[i] = '\0'; \
+    int t; \
+    for (t = 0; t < i / 2; t++) \
+    { \
+        buffer[t] ^= buffer[i - t - 1]; \
+        buffer[i - t - 1] ^= buffer[t]; \
+        buffer[t] ^= buffer[i - t - 1]; \
+    } \
+    if (n == 0) \
+    { \
+        buffer[0] = '0'; \
+        buffer[1] = '\0'; \
+    } \
+}
+
+void i32_to_str(int32_t n, char *buffer) _I32_TO_STR(n, buffer)
+
+void i32_to_volstr(int32_t n, volatile char *buffer) _I32_TO_STR(n, buffer)
+
 void ui32_to_str(uint32_t n, char *buffer)
 {
     if (n == 0)
@@ -23,35 +56,6 @@ void ui32_to_str(uint32_t n, char *buffer)
         buffer[t] ^= buffer[i - t - 1];
         buffer[i - t - 1] ^= buffer[t];
         buffer[t] ^= buffer[i - t - 1];
-    }
-}
-
-void i32_to_str(int32_t n, char *buffer)
-{
-    int i = 0;
-    bool is_neg = n < 0;
-    int32_t abs_n = is_neg ? -n : n;
-    while (abs_n != 0)
-    {
-        buffer[i++] = (uint8_t)(abs_n % 10) + '0';
-        abs_n = abs_n / 10;
-    }
-    if (is_neg)
-    {
-        buffer[i++] = '-';
-    }
-    buffer[i] = '\0';
-    int t;
-    for (t = 0; t < i / 2; t++)
-    {
-        buffer[t] ^= buffer[i - t - 1];
-        buffer[i - t - 1] ^= buffer[t];
-        buffer[t] ^= buffer[i - t - 1];
-    }
-    if (n == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
     }
 }
 

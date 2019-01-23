@@ -17,10 +17,17 @@
 #define DEBOUNCE_MS         200
 #define CYC_PER_MS          200000
 #define CYC_RESET_THRESH    4000000000
-#define SHARED_MEM_ADDR     0x00010000
+#define SWITCH_STATE_SZ     32
+#define SHAREDMEM_PTR       (volatile uint8_t *)0x00010000
+#define SWITCH1_BIT_PTR     SHAREDMEM_PTR
+#define SWITCH1_STATE_PTR   SWITCH1_BIT_PTR + 1
+#define SWITCH2_BIT_PTR     SWITCH1_STATE_PTR + SWITCH_STATE_SZ
+#define SWITCH2_STATE_PTR   SWITCH2_BIT_PTR + 1
 
-bool should_write();
-void write_state_shared_mem();
+bool should_write_switch1(void);
+bool should_write_switch2(void);
+void write_switch1_state(void);
+void write_switch2_state(void);
 
 struct gpo p8_11;
 struct gpi p8_15;
@@ -31,8 +38,12 @@ struct debouncer switch1_debouncer;
 struct debouncer switch2_debouncer;
 struct switch1 switch1;
 struct switch2 switch2;
-volatile uint8_t* shared_mem = (volatile uint8_t *)SHARED_MEM_ADDR;
-static char message[128];
+volatile uint8_t* switch1_bit_memptr   = SWITCH1_BIT_PTR;
+volatile uint8_t* switch1_state_memptr = SWITCH1_STATE_PTR;
+volatile uint8_t* switch2_bit_memptr   = SWITCH2_BIT_PTR;
+volatile uint8_t* switch2_state_memptr = SWITCH2_STATE_PTR;
+char switch1_buf[SWITCH_STATE_SZ];
+char switch2_buf[SWITCH_STATE_SZ];
 
 int main(void)
 {
@@ -64,29 +75,43 @@ int main(void)
         counter.update(&counter);
         switch1.update(&switch1);
         switch2.update(&switch2);
-        if (should_write()) write_state_shared_mem();
+        if (should_write_switch1()) write_switch1_state();
+        if (should_write_switch2()) write_switch2_state();
     };
 }
 
-bool should_write()
+bool should_write_switch1(void)
 {
-    return shared_mem[0] == 0;
+    return switch1_bit_memptr[0] == 0;
 }
 
-void write_state_shared_mem()
+bool should_write_switch2(void)
 {
-    char last_change[16];
-    char last_on[16];
-    i32_to_str(switch1.last_change_ms, last_change);
-    i32_to_str(switch2.last_on_ms, last_on);
-    strcpy(message, last_change);
-    strcat(message, ";");
-    strcat(message, last_on);
-    int i;
-    for (i = 1; i < strlen(message) + 1; i++)
+    return switch2_bit_memptr[0] == 0;
+}
+
+void write_switch1_state(void)
+{
+    int i = 0;
+    i32_to_str(switch1.last_change_ms, switch1_buf);
+    while (switch1_buf[i] != (char)0)
     {
-        shared_mem[i] = message[i - 1];
+        switch1_state_memptr[i] = (uint8_t)switch1_buf[i];
+        i++;
     }
-    shared_mem[i + 1] = 0;
-    shared_mem[0] = 1;
+    switch1_state_memptr[i] = 0;
+    switch1_bit_memptr[0] = 1;
+}
+
+void write_switch2_state(void)
+{
+    int i = 0;
+    i32_to_str(switch2.last_on_ms, switch2_buf);
+    while (switch2_buf[i] != (char)0)
+    {
+        switch2_state_memptr[i] = (uint8_t)switch2_buf[i];
+        i++;
+    }
+    switch2_state_memptr[i] = 0;
+    switch2_bit_memptr[0] = 1;
 }
