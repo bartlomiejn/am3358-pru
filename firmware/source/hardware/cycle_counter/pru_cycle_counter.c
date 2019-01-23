@@ -35,9 +35,12 @@ static void pru_cycle_counter_start(struct cycle_counter *self)
 
 static void pru_cycle_counter_update(struct cycle_counter *self)
 {
+
     if (PRU0_CTRL.CYCLE > CYC_RESET_THRESHOLD)
     {
+        PRU0_CTRL.CYCLE = 0;
         PRU0_CTRL.CYCLE -= CYC_RESET_THRESHOLD;
+        PRU0_CTRL.CYCLE = 1;
     }
 }
 
