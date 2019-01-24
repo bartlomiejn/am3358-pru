@@ -25,7 +25,6 @@
 #define SWITCH2_BIT_PTR     SWITCH1_STATE_PTR + SWITCH_STATE_SZ
 #define SWITCH2_STATE_PTR   SWITCH2_BIT_PTR + 1
 
-
 bool should_write_switch1(void);
 bool should_write_switch2(void);
 void write_switch1_state(void);
