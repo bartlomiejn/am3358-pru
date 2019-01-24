@@ -6,6 +6,6 @@
 
 extern bool spy_gpo_value;
 
-void mock_gpo_init(struct gpo *self);
+void init_mock_gpo(struct gpo *self);
 
 #endif

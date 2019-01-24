@@ -10,7 +10,8 @@ GPI_DIR = $(HARDWARE_DIR)gpi/
 GPO_DIR = $(HARDWARE_DIR)gpo/
 SHARED_SRC = \
 	$(HARDWARE_DIR)switch1.c $(HARDWARE_DIR)switch2.c \
-	$(SOFTWARE_DIR)debouncer.c $(SOURCE_ROOT)utils.c
+	$(SOFTWARE_DIR)cycle_timer.c $(SOURCE_ROOT)utils.c \
+	$(GPI_DIR)debounced_gpi.c
 PRU0_SRC = \
 	$(SOFTWARE_DIR)rpmsg.c \
 	$(CYCLE_COUNTER_DIR)pru_cycle_counter.c \
@@ -43,7 +44,9 @@ DOUBLES_DIR = $(TESTS_ROOT)doubles/
 TESTS_SRC = \
 	$(DOUBLES_DIR)mock_cycle_counter.c \
 	$(DOUBLES_DIR)mock_gpi.c $(DOUBLES_DIR)mock_gpo.c \
+	$(DOUBLES_DIR)mock_cycle_timer.c $(DOUBLES_DIR)mock_debounced_gpi.c \
 	$(TESTS_ROOT)switch1_tests.c $(TESTS_ROOT)switch2_tests.c \
+	$(TESTS_ROOT)cycle_timer_tests.c $(TESTS_ROOT)debounced_gpi_tests.c \
 	$(TESTS_ROOT)main.c
 TESTS_INCLUDE = -I $(ARM_LINUX_ROOT) \
 	-I $(SOURCE_ROOT) \

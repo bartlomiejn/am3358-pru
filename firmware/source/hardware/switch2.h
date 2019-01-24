@@ -4,28 +4,21 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "hardware/gpo/gpo.h"
-#include "hardware/gpi/gpi.h"
-#include "hardware/cycle_counter/cycle_counter.h"
-#include "software/debouncer.h"
+#include "hardware/gpi/debounced_gpi.h"
 
 struct switch2
 {
-    struct gpi* gpi;
-    struct gpo* gpo;
-    struct cycle_counter* counter;
-    struct debouncer* debouncer;
+    struct debounced_gpi* gpi;
     bool state;
-    int32_t last_on_ms;
-    int32_t on_ms;
-    uint32_t on_cyc;
+    int32_t last_on;
+    int32_t on;
+    int32_t curr_on;
     void (*update)(struct switch2* switch1);
 };
 
 void switch2_init(
     struct switch2* self,
-    struct cycle_counter* counter,
-    struct debouncer* debouncer,
-    struct gpi* gpi,
+    struct debounced_gpi* gpi,
     struct gpo* gpo
 );
 

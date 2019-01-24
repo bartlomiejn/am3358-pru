@@ -1,36 +1,42 @@
 # pru-stopwatch
 
 ## Overview
-- This project uses `BeagleBone Black rev C` with `Debian 9.5 2018-10-07 4GB SD IOT`
-- Three cables are required:
-    - Ethernet
-    - FTDI to TTL [like the one here](https://www.ftdichip.com/Support/Documents/DataSheets/Cables/DS_TTL-232R_RPi.pdf)
-    - USB Mini Type-B to Type-A cable
+The project consists of two elements:
+- A kernel module which allows to access switch information through a sysfs interface available at `/sys/devices/prusw` 
+- PRU0 firmware which measures the time for two switches:
+    - First: Time between last state change in ms, -1 if it didn't happen
+    - Second: Time for last time when the switch was on, -1 if it didn't happen
+        
+Required hardware and software:
+- `BeagleBone Black rev C` 
+- `Debian 9.5 2018-10-07 4GB SD IOT` (download link in installation description)
+- Ethernet cable
+- FTDI to TTL [like the one here](https://www.ftdichip.com/Support/Documents/DataSheets/Cables/DS_TTL-232R_RPi.pdf)
+- USB Mini Type-B to Type-A cable
 - An SD card of at least 4GB size
+- Two switches
 
 ## Installation instructions (macOS)
-1. Retrieve the raw disk filename for your SD card
+1) Retrieve the raw disk filename for your SD card
     - Plug in the SD card in
     - `diskutil list`
     - Plug it out
     - `diskutil list`
     - The missing disk name is your SD card - it should be something similar to `/dev/diskX`
     - Accompanying raw disk filename should be `/dev/rdiskX` where X is the same number from the step above
-2. Download Debian
-    - `wget https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz`
-3. Copy Debian to the SD card
+2) Download `Debian 9.5 2018-10-07 4GB SD IOT`: `wget https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz`
+3) Copy Debian to the SD card
     - Replace the X from commands below with your SD card number from step 1
     - Clear the card: `sudo dd if=/dev/zero of=/dev/rdiskX bs=8192`
     - Copy the image to the card: `xzcat bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz | sudo dd of=/dev/rdiskX`
-4. Insert the SD card into the card slot on the BBB
-5. While holding the boot button, power it up using the Mini Type-B cable
-6. [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial), the pins that are of interest to you are J1_1, J1_4 and J1_5 which are GND, RX and TX respectively
-7. Connect using:
+4) Insert the SD card into the card slot on the BBB
+5) While holding the boot button, power it up using the Mini Type-B cable
+6) [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial)
+7) Access Debian using:
     - `sudo screen /dev/tty.usbserial-* 115200`
-    - Default credentials: `debian` / `temppwd`
-8. Clone this repository into the `home` directory and build the dtb overlay: 
-    - `cd ~; git clone https://github.com/bartlomiejn/pru-stopwatch;
-9. Run `cd ~/pru-stopwatch; sudo make pre_reboot; sudo reboot`
-10. After reboot, continue with `cd ~/pru-stopwatch; sudo make post_reboot`
-
-(Further steps will be added here)
+    - Credentials: `debian` / `temppwd`
+8) Clone this repository into the `home` directory `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch`
+9) Run `cd /home/debian/pru-stopwatch; sudo make pre_reboot`, the script will reboot your Beagleboard
+10) After reboot, continue with `cd /home/debian/pru-stopwatch; sudo make post_reboot`
+11) Connect first switch to P8_11 and P8_15
+12) Connect second switch to P8_12 and P8_16

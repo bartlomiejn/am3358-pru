@@ -1,213 +1,178 @@
 #include "unit_test.h"
-#include "doubles/mock_gpi.h"
+#include "doubles/mock_debounced_gpi.h"
 #include "doubles/mock_gpo.h"
-#include "doubles/mock_cycle_counter.h"
-#include "software/debouncer.h"
 #include "hardware/switch2.h"
 
-#define DEBOUNCE_MS         100
-#define CYCLES_PER_MS       200000
-#define CYC_RESET_THRESHOLD 4000000000
-#define CYCS_50MS           (50 * CYCLES_PER_MS)
-#define CYCS_DEBOUNCE       (DEBOUNCE_MS * CYCLES_PER_MS + 1)
-
 static struct switch2 switch2;
-static struct debouncer debouncer;
-static struct cycle_counter mock_counter;
-static struct gpi mock_gpi;
+static struct debounced_gpi mock_gpi;
 static struct gpo mock_gpo;
 
-static void setup()
+// Auxiliary
+
+static void update_switch_n_times(int n)
 {
-    mock_cycle_count = 0;
-    mock_gpi_value = 0;
-    mock_gpi_init(&mock_gpi);
-    mock_gpo_init(&mock_gpo);
-    mock_cycle_counter_init(&mock_counter, CYCLES_PER_MS, CYC_RESET_THRESHOLD);
-    debouncer_init(
-        &debouncer,
-        DEBOUNCE_MS,
-        mock_counter.cycles_per_ms,
-        mock_counter.reset_thresh
-    );
-    switch2_init(&switch2, &mock_counter, &debouncer, &mock_gpi, &mock_gpo);
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        switch2.update(&switch2);
+    }
 }
 
-static void teardown() {}
-
-static char *WhenInit_ThenSetGPOTo1(void)
+static void gpi_transition_to_unstable_and_update()
 {
+    mock_gpi.is_stable = true;
+    mock_deb_gpi_debounce_is_stable = false;
+    switch2.update(&switch2);
+}
+
+static void gpi_transition_to_stable_and_update(int from, int to)
+{
+    mock_gpi.state = from;
+    mock_deb_gpi_debounce = to;
+    mock_gpi.is_stable = false;
+    mock_deb_gpi_debounce_is_stable = true;
+    switch2.update(&switch2);
+}
+
+static void gpi_set_unstable()
+{
+    mock_gpi.is_stable = false;
+    mock_deb_gpi_debounce_is_stable = false;
+}
+
+static void gpi_set_stable(bool val)
+{
+    mock_gpi.state = val;
+    mock_deb_gpi_debounce = val;
+    mock_gpi.is_stable = true;
+    mock_deb_gpi_debounce_is_stable = true;
+}
+
+// Setup
+
+test_setup_start(Test_Switch2)
+    mock_deb_gpi_debounce = 0;
+    init_mock_debounced_gpi(&mock_gpi);
+    init_mock_gpo(&mock_gpo);
+    switch2_init(&switch2, &mock_gpi, &mock_gpo);
+test_setup_end()
+
+// Init
+
+test_function_start(WhenInit_ThenSetGPOTo1)
     test_assert(spy_gpo_value == 1);
-    return 0;
-}
+test_function_end()
 
-static char *WhenInit_ThenSetStateToGPI(void)
-{
-    test_assert(switch2.state == mock_gpi_value);
-    return 0;
-}
+test_function_start(WhenInit_ThenSetStateToGPI)
+    gpi_set_stable(1);
+    switch2_init(&switch2, &mock_gpi, &mock_gpo);
+    test_assert(switch2.state == 1);
+test_function_end()
 
-static char *Given0_WhenGetLastChange_ThenMinus1(void)
-{
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+// Last on - No change
 
-static char *Given0And50ms_WhenGetLastChange_ThenMinus1(void)
-{
+test_function_start(Given0_WhenLastOn_ThenMinus1)
+    gpi_set_stable(0);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+    test_assert(switch2.last_on == -1);
+test_function_end()
 
-static char *Given0And50msAnd1_WhenGetLastChange_ThenMinus1(void)
-{
+test_function_start(Given1_WhenLastOn_ThenMinus1)
+    gpi_set_stable(1);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+    test_assert(switch2.last_on == -1);
+test_function_end()
 
-static char *Given0And50msAnd1AndAfterDebounce_WhenGetLastChange_ThenMinus1(void)
-{
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+// Last on - Unstable and single change
 
-static char *Given0And50msAnd1AndDebounceAnd0AndDebounce_WhenGetLastChange_Then100ms(void)
-{
+test_function_start(Given0AndUpdateAndChangeAnd1_WhenLastOn_ThenMinus1)
+    gpi_set_stable(0);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE + 1;
-    mock_gpi_value = 0;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE * 2 + 1;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == 100);
-    return 0;
-}
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(0, 1);
+    test_assert(switch2.last_on == -1);
+test_function_end()
 
-static char *Given0And50msAnd1AndDebounceAnd0AndDebounceAnd1AndDebounceAnd50msAnd0AndDebounce_WhenGetLastChange_Then150ms(void)
-{
+test_function_start(Given1AndUpdateAndChangeAnd0_WhenLastOn_Then1)
+    gpi_set_stable(1);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE + 1;
-    mock_gpi_value = 0;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE * 2 + 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE * 2 + 2;
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE * 3 + 2;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS * 2 + CYCS_DEBOUNCE * 3 + 2;
-    mock_gpi_value = 0;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS * 2 + CYCS_DEBOUNCE * 4 + 2;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == 150);
-    return 0;
-}
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(1, 0);
+    test_assert(switch2.last_on == 1);
+test_function_end()
 
-static char *Given1_WhenGetLastChange_ThenMinus1(void)
-{
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+test_function_start(Given0And5UpdatesAndChangeAnd1_WhenLastOn_ThenMinus1)
+    gpi_set_stable(0);
+    update_switch_n_times(5);
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(0, 1);
+    test_assert(switch2.last_on == -1);
+test_function_end()
 
-static char *Given1And50ms_WhenGetLastChange_ThenMinus1(void)
-{
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+test_function_start(Given1And5UpdatesAndChangeAnd0_WhenLastOn_Then5)
+    gpi_set_stable(1);
+    update_switch_n_times(5);
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(1, 0);
+    test_assert(switch2.last_on == 5);
+test_function_end()
 
-static char *Given1And50msAnd0_WhenGetLastChange_ThenMinus1(void)
-{
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 0;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == -1);
-    return 0;
-}
+// Last on - Unstable and change twice
 
-static char *Given1And50msAnd0AndDebounce_WhenGetLastChange_Then50ms(void)
-{
-    mock_gpi_value = 1;
-    switch2.state = 1;
+test_function_start(Given0AndChangeWith5UpdatesAndChange_WhenLastChanges_Then5)
+    gpi_set_stable(0);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 0;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == 50);
-    return 0;
-}
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(0, 1);
+    gpi_set_stable(1);
+    update_switch_n_times(3);
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(1, 0);
+    test_assert(switch2.last_on == 5);
+test_function_end()
 
-static char *Given1And50msAnd0AndDebounceAnd1And150msAnd0AndDebounce_WhenGetLastChange_Then150ms(void)
-{
-    mock_gpi_value = 1;
-    switch2.state = 1;
+test_function_start(Given1AndChangeWith5UpdatesAndChange_WhenLastChanges_Then1)
+    gpi_set_stable(1);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS;
-    mock_gpi_value = 0;
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(1, 0);
+    gpi_set_stable(0);
+    update_switch_n_times(3);
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(0, 1);
+    test_assert(switch2.last_on == 1);
+test_function_end()
+
+// Last on - Unstable and no change
+
+test_function_start(Given0AndUnstableAndStableAnd0_WhenLastOn_ThenMinus1)
+    gpi_set_stable(0);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE;
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(0, 0);
+    test_assert(switch2.last_on == -1);
+test_function_end()
+
+test_function_start(Given0AndUnstableAndStableAnd1_WhenLastOn_ThenMinus1)
+    gpi_set_stable(1);
     switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE + 1;
-    mock_gpi_value = 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS + CYCS_DEBOUNCE * 2 + 1;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS * 2 + CYCS_DEBOUNCE * 2 + 1;
-    mock_gpi_value = 0;
-    switch2.update(&switch2);
-    mock_cycle_count = CYCS_50MS * 2 + CYCS_DEBOUNCE * 3 + 1;
-    switch2.update(&switch2);
-    test_assert(switch2.last_on_ms == 150);
-    return 0;
-}
+    gpi_transition_to_unstable_and_update();
+    gpi_transition_to_stable_and_update(1, 1);
+    test_assert(switch2.last_on == -1);
+test_function_end()
 
 test_case_start(Test_Switch2)
-add_test(WhenInit_ThenSetGPOTo1);
-add_test(WhenInit_ThenSetStateToGPI);
-add_test(Given0_WhenGetLastChange_ThenMinus1);
-add_test(Given0And50ms_WhenGetLastChange_ThenMinus1);
-add_test(Given0And50msAnd1_WhenGetLastChange_ThenMinus1);
-add_test(Given0And50msAnd1AndAfterDebounce_WhenGetLastChange_ThenMinus1);
-add_test(Given0And50msAnd1AndDebounceAnd0AndDebounce_WhenGetLastChange_Then100ms);
-add_test(Given0And50msAnd1AndDebounceAnd0AndDebounceAnd1AndDebounceAnd50msAnd0AndDebounce_WhenGetLastChange_Then150ms);
-add_test(Given1_WhenGetLastChange_ThenMinus1);
-add_test(Given1And50ms_WhenGetLastChange_ThenMinus1);
-add_test(Given1And50msAnd0_WhenGetLastChange_ThenMinus1);
-add_test(Given1And50msAnd0AndDebounce_WhenGetLastChange_Then50ms);
-add_test(Given1And50msAnd0AndDebounceAnd1And150msAnd0AndDebounce_WhenGetLastChange_Then150ms);
+    add_setup(Test_Switch2);
+    add_test_function(WhenInit_ThenSetGPOTo1);
+    add_test_function(WhenInit_ThenSetStateToGPI);
+    add_test_function(Given0_WhenLastOn_ThenMinus1);
+    add_test_function(Given1_WhenLastOn_ThenMinus1);
+    add_test_function(Given0AndUpdateAndChangeAnd1_WhenLastOn_ThenMinus1);
+    add_test_function(Given1AndUpdateAndChangeAnd0_WhenLastOn_Then1);
+    add_test_function(Given0And5UpdatesAndChangeAnd1_WhenLastOn_ThenMinus1);
+    add_test_function(Given1And5UpdatesAndChangeAnd0_WhenLastOn_Then5);
+    add_test_function(Given0AndChangeWith5UpdatesAndChange_WhenLastChanges_Then5);
+    add_test_function(Given1AndChangeWith5UpdatesAndChange_WhenLastChanges_Then1);
+    add_test_function(Given0AndUnstableAndStableAnd0_WhenLastOn_ThenMinus1);
+    add_test_function(Given0AndUnstableAndStableAnd1_WhenLastOn_ThenMinus1);
 test_case_end()
