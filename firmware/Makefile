@@ -63,11 +63,13 @@ PRU0 = remoteproc1
 PRU0_DEV_STATE = /sys/class/remoteproc/$(PRU0)/state
 PRU0_DEV_FIRMWARE = /sys/class/remoteproc/$(PRU0)/firmware
 FIRMWARE_ROOT = /lib/firmware/
+PRU0_CURRENT_STATE = $(shell cat $(PRU0_DEV_STATE))
 PHONY += install
 install:
 	# TODO: Add root check
 	rm -f $(FIRMWARE_ROOT)$(PRU0_FW)
 	cp $(PRU0_FW_OUTPUT) $(FIRMWARE_ROOT)$(PRU0_FW)
+	echo $(PRU0_CURRENT_STATE)
 	echo stop > $(PRU0_DEV_STATE)
 	echo am335x-pru0-fw > $(PRU0_DEV_FIRMWARE)
 	echo start > $(PRU0_DEV_STATE)
