@@ -9,11 +9,8 @@ all:
 
 PHONY += install
 install:
-	# TODO: Add root check
+	cp prusw.conf /etc/modules-load.d/
 	$(MAKE) -C $(K_DIR) SUBDIRS=$(PWD) modules_install
-	cp rules/99-prusw.rules /etc/udev/rules.d
-	rmmod $(DRIVER_KO)
-	insmod $(DRIVER_KO)
 
 PHONY += clean
 clean:

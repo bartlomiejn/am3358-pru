@@ -4,6 +4,7 @@ pre_reboot:
 	apt-get update
 	apt-get install linux-headers-$(shell uname -r)
 	$(MAKE) driver
+	reboot
 
 PHONY += post_reboot
 post_reboot:
