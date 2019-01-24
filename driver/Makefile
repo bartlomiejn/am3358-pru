@@ -9,9 +9,10 @@ all:
 
 PHONY += install
 install:
-	cp prusw.conf /etc/modules-load.d/
 	$(MAKE) -C $(K_DIR) SUBDIRS=$(PWD) modules_install
 	cp -f prusw.ko /lib/modules/$(shell uname -r)/
+	cp -f prusw.conf /etc/modules-load.d/
+	echo prusw > /etc/modules-load.d/modules.conf
 
 PHONY += clean
 clean:
