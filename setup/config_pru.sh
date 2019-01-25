@@ -2,8 +2,8 @@
 
 ### BEGIN INIT INFO
 # Provides:          config_pru
-# Required-Start:    $all
-# Required-Stop:     $all
+# Required-Start:    kmod
+# Required-Stop:     kmod
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Configure pins and set firmware for the PRU
