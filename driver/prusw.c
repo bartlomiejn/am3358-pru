@@ -6,18 +6,21 @@
 #include <linux/sysfs.h>
 #include <linux/mutex.h>
 #include <linux/string.h>
+#include <linux/remoteproc.h>
 #include <linux/io.h>
+#include <linux/of.h>
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Bartlomiej Nowak");
 MODULE_DESCRIPTION("Driver for AM335x pru-stopwatch firmware");
 MODULE_VERSION("0.1");
+MODULE_SOFTDEP("pre: remoteproc");
 
 #define DEVICE_NAME             "prusw"
 #define PRU_MEM_ADDR            0x4A300000
 #define PRU_MEM_LEN             0x80000
 #define PRU_SHAREDMEM_OFFSET    0x10000
-#define PRU_SHAREDMEM_LEN       0x3000      // 12KB
+#define PRU_SHAREDMEM_LEN       0x3000          // 12KB
 #define SWITCH_STATE_LEN        32
 
 typedef enum {
@@ -28,6 +31,7 @@ typedef enum {
 static struct device* root_dev;
 static struct device_attribute switch1_attr;
 static struct device_attribute switch2_attr;
+static struct rproc *pru0_rproc;
 static void __iomem *pru_mem;
 static uint8_t __iomem *pru_switch1_bit;
 static uint8_t __iomem *pru_switch1_state;
@@ -36,6 +40,11 @@ static uint8_t __iomem *pru_switch2_state;
 static DEFINE_MUTEX(switch1_mux);
 static DEFINE_MUTEX(switch2_mux);
 
+static int register_root_dev(void);
+static int create_switch1_file(void);
+static int create_switch2_file(void);
+static int remap_prumem(void);
+static int get_pru0_rproc(void);
 static ssize_t switch1_read(
     struct device *dev,
     struct device_attribute *attr,
@@ -49,56 +58,38 @@ static ssize_t switch2_read(
 
 static int __init prusw_init(void)
 {
-    int err;
-
     printk(KERN_INFO "prusw: Initializing\n");
-
-    root_dev = root_device_register(DEVICE_NAME);
-    if (root_dev == NULL)
+    if (register_root_dev())
     {
         printk(KERN_INFO "prusw: Failed to register root device");
         goto deinit;
     }
-
-    switch1_attr.attr.name = "switch1";
-    switch1_attr.attr.mode = 0444; // Read only
-    switch1_attr.show = switch1_read;
-    switch1_attr.store = NULL;
-    err = sysfs_create_file(&root_dev->kobj, &switch1_attr.attr);
-    if (err)
+    if (create_switch1_file())
     {
         printk(KERN_INFO "prusw: Failed to create switch1");
         goto deinit_attr1;
     }
-
-    switch2_attr.attr.name = "switch2";
-    switch2_attr.attr.mode = 0444; // Read only
-    switch2_attr.show = switch2_read;
-    switch2_attr.store = NULL;
-    err = sysfs_create_file(&root_dev->kobj, &switch2_attr.attr);
-    if (err)
+    if (create_switch2_file())
     {
         printk(KERN_INFO "prusw: Failed to create switch2");
         goto deinit_attr2;
     }
-
-    pru_mem = ioremap(PRU_MEM_ADDR, PRU_MEM_LEN);
-    if (!pru_mem)
+    if (remap_prumem())
     {
         printk(KERN_INFO "prusw: Failed to map PRU memory");
         goto deinit_prumem;
     }
-    pru_switch1_bit = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
-    pru_switch1_state = pru_switch1_bit + 1;
-    pru_switch2_bit = pru_switch1_state + SWITCH_STATE_LEN;
-    pru_switch2_state = pru_switch2_bit + 1;
-
+    if (get_pru0_rproc())
+    {
+        printk(KERN_INFO "prusw: Failed to retrieve PRU0 rproc handle");
+        goto deinit_rproc;
+    }
     mutex_init(&switch1_mux);
     mutex_init(&switch2_mux);
-
     printk(KERN_INFO "prusw: Initialized");
     return 0;
-
+deinit_rproc:
+    iounmap(pru_mem);
 deinit_prumem:
     sysfs_remove_file(&root_dev->kobj, &switch2_attr.attr);
 deinit_attr2:
@@ -127,21 +118,15 @@ static ssize_t switch1_read(
 ){
     ssize_t len;
     if (mutex_trylock(&switch1_mux) == 0)
-    {
         return -EBUSY;
-    }
     iowrite8(0, (void *)pru_switch1_bit);
     while (ioread8((void *)pru_switch1_bit) == 0);
     for (len = 0; len < SWITCH_STATE_LEN; len++)
     {
         char ch = (char)ioread8(pru_switch1_state + len);
         if (ch == 0)
-        {
-            printk(KERN_INFO "prusw: switch1_read read char: null");
             break;
-        }
         buf[len] = ch;
-        printk(KERN_INFO "prusw: switch1_read read char: %c", ch);
     }
     buf[len + 1] = (char)0;
     mutex_unlock(&switch1_mux);
@@ -155,25 +140,76 @@ static ssize_t switch2_read(
 ){
     ssize_t len;
     if (mutex_trylock(&switch2_mux) == 0)
-    {
         return -EBUSY;
-    }
     iowrite8(0, (void *)pru_switch2_bit);
     while (ioread8((void *)pru_switch2_bit) == 0);
     for (len = 0; len < SWITCH_STATE_LEN; len++)
     {
         char ch = (char)ioread8(pru_switch2_state + len);
         if (ch == 0)
-        {
-            printk(KERN_INFO "prusw: switch2_read read char: null");
             break;
-        }
         buf[len] = ch;
-        printk(KERN_INFO "prusw: switch2_read read char: %c", ch);
     }
     buf[len + 1] = (char)0;
     mutex_unlock(&switch2_mux);
     return len;
+}
+
+static int register_root_dev(void)
+{
+    root_dev = root_device_register(DEVICE_NAME);
+    return -(root_dev == NULL);
+}
+
+static int create_switch1_file(void)
+{
+    switch1_attr.attr.name = "switch1";
+    switch1_attr.attr.mode = 0444; // Read only
+    switch1_attr.show = switch1_read;
+    switch1_attr.store = NULL;
+    return sysfs_create_file(&root_dev->kobj, &switch1_attr.attr);
+}
+
+static int create_switch2_file(void)
+{
+    switch2_attr.attr.name = "switch2";
+    switch2_attr.attr.mode = 0444; // Read only
+    switch2_attr.show = switch2_read;
+    switch2_attr.store = NULL;
+    return sysfs_create_file(&root_dev->kobj, &switch2_attr.attr);
+}
+
+static int remap_prumem(void)
+{
+    pru_mem = ioremap(PRU_MEM_ADDR, PRU_MEM_LEN);
+    if (!pru_mem)
+        return -1;
+    pru_switch1_bit = (uint8_t *)pru_mem + PRU_SHAREDMEM_OFFSET;
+    pru_switch1_state = pru_switch1_bit + 1;
+    pru_switch2_bit = pru_switch1_state + SWITCH_STATE_LEN;
+    pru_switch2_state = pru_switch2_bit + 1;
+    return 0;
+}
+
+static int get_pru0_rproc(void)
+{
+    pru0_rproc = rproc_get_by_phandle(0x4a334000);
+    printk(KERN_INFO "rproc_get_by_phandle: trying 0x4a334000");
+    if (pru0_rproc == NULL)
+    {
+        pru0_rproc = rproc_get_by_phandle(0x4a338000);
+        printk(KERN_INFO "rproc_get_by_phandle: previous failed, trying 4a338000");
+    }
+    if (pru0_rproc == NULL)
+    {
+        pru0_rproc = rproc_get_by_phandle(0x9);
+        printk(KERN_INFO "rproc_get_by_phandle: previous failed, trying 0x9");
+    }
+    if (pru0_rproc == NULL)
+    {
+        printk(KERN_INFO "rproc_get_by_phandle: previous failed ");
+    }
+    return -(pru0_rproc == NULL);
 }
 
 module_init(prusw_init);
