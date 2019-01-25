@@ -190,7 +190,7 @@ test_case_start(Test_Debounced_GPI)
     add_test_function(Given0And5ChangesAnd9times0_WhenState_Then0);
     add_test_function(Given0And5ChangesAnd10times0_WhenIsStable_ThenStable);
     add_test_function(Given0And5ChangesAnd10times0_WhenState_Then0);
-    // It is a slight bug that its not symmetric, but it probably doesn't matter
+    // It is a slight bug that its not symmetric, but it  doesn't matter
     add_test_function(Given0And5ChangesAnd8times1_WhenIsStable_ThenUnstable);
     add_test_function(Given0And5ChangesAnd8times1_WhenState_Then0);
     add_test_function(Given0And5ChangesAnd9times1_WhenIsStable_ThenStable);

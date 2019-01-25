@@ -39,6 +39,18 @@ pru0: $(PRU0_SRC) $(SHARED_SRC) $(LINKER_CMD_SRC)
 	clpru -z $(LINKER_CMD_SRC) -i $(CGT_PRU_ROOT)lib -o $(PRU0_FW_OUTPUT) \
 		$(OBJ_FILES) $(LIBS)
 
+PHONY += pru0_setup
+pru0_setup:
+	@config-pin P8_11 pruout
+	@config-pin P8_15 pruin
+	@config-pin P8_12 pruout
+	@config-pin P8_16 pruin
+	@if [ $(shell cat $(PRU0_DEV_STATE)) = running ]; then \
+		echo stop > $(PRU0_DEV_STATE); \
+	fi
+	@echo am335x-pru0-fw > $(PRU0_DEV_FIRMWARE)
+	@echo start > $(PRU0_DEV_STATE)
+
 TESTS_ROOT = tests/
 DOUBLES_DIR = $(TESTS_ROOT)doubles/
 TESTS_SRC = \
@@ -56,8 +68,7 @@ TESTS_INCLUDE =  \
 PHONY += tests
 tests: $(SHARED_SRC) $(TESTS_SRC)
 	mkdir -p output
-	gcc $(TESTS_INCLUDE) $(SHARED_SRC) $(TESTS_SRC) -o \
-		$(OUTPUT_ROOT)unit_tests
+	gcc $(TESTS_INCLUDE) $(SHARED_SRC) $(TESTS_SRC) -o $(OUTPUT_ROOT)unit_tests
 	./$(OUTPUT_ROOT)unit_tests
 
 PRU0 = remoteproc1
@@ -69,15 +80,6 @@ install:
 	# TODO: Add root check
 	@rm -f $(FIRMWARE_ROOT)$(PRU0_FW)
 	@cp $(PRU0_FW_OUTPUT) $(FIRMWARE_ROOT)$(PRU0_FW)
-	@config-pin P8_11 pruout
-	@config-pin P8_15 pruin
-	@config-pin P8_12 pruout
-	@config-pin P8_16 pruin
-	@if [ $(shell cat $(PRU0_DEV_STATE)) = running ]; then \
-		echo stop > $(PRU0_DEV_STATE); \
-	fi
-	@echo am335x-pru0-fw > $(PRU0_DEV_FIRMWARE)
-	@echo start > $(PRU0_DEV_STATE)
 
 PHONY += clean
 clean:

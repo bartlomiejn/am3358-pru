@@ -30,13 +30,9 @@ Required hardware and software:
     - Clear the card: `sudo dd if=/dev/zero of=/dev/rdiskX bs=8192`
     - Copy the image to the card: `xzcat bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz | sudo dd of=/dev/rdiskX`
 4) Insert the SD card into the card slot on the BBB
-5) While holding the boot button, power it up using the Mini Type-B cable
+5) Power it up while holding the boot button
 6) [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial)
-7) Access Debian using:
-    - `sudo screen /dev/tty.usbserial-* 115200`
-    - Credentials: `debian` / `temppwd`
-8) Clone this repository into the `home` directory `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch`
-9) Run `cd /home/debian/pru-stopwatch; sudo make pre_reboot`, the script will reboot your Beagleboard
-10) After reboot, continue with `cd /home/debian/pru-stopwatch; sudo make post_reboot`
-11) Connect first switch to P8_11 and P8_15
-12) Connect second switch to P8_12 and P8_16
+7) Access Debian (Credentials: `debian` / `temppwd`): `sudo screen /dev/tty.usbserial-* 115200`
+8) `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch; cd /home/debian/pru-stopwatch; sudo make install`
+10) After reboot, connect first switch to P8_11 and P8_15 and second switch to P8_12 and P8_16
+
