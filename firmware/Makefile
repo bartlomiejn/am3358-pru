@@ -1,3 +1,11 @@
+EUID := $(shell id -u -r)
+PHONY := is_root
+is_root:
+ifneq ($(EUID),0)
+	@echo "This recipe requires root access."
+	@exit 1
+endif
+
 PRU_CGT_ROOT = /usr/share/ti/cgt-pru/
 PRU_RPMSG_ROOT = /usr/lib/ti/pru-software-support-package/
 ARM_LINUX_ROOT = /usr/include/arm-linux-gnueabihf/
@@ -28,19 +36,23 @@ INCLUDES = \
 	--include_path=$(PRU_RPMSG_ROOT)include/am335x \
 	--include_path=$(ARM_LINUX_ROOT)
 LINKER_CMD_SRC = $(SOURCE_ROOT)AM335x_PRU.cmd
-OBJ_FILES = $(shell find $(OUTPUT_ROOT) -name '*.obj')
 LIBS = -l$(PRU_RPMSG_ROOT)lib/rpmsg_lib.lib -l$(PRU_CGT_ROOT)lib/libc.a
 PRU0_FW = am335x-pru0-fw
 PRU0_FW_OUTPUT = $(OUTPUT_ROOT)$(PRU0_FW)
-PHONY := pru0
+OBJ_FILES = $(patsubst %.c,%.obj,$(addprefix $(OUTPUT_ROOT),$(notdir $(SHARED_SRC) $(PRU0_SRC))))
+PHONY += pru0
 pru0: $(PRU0_SRC) $(SHARED_SRC) $(LINKER_CMD_SRC)
-	mkdir -p output
+	@mkdir -p output
 	clpru $(CFLAGS) $(INCLUDES) $(PRU0_SRC) $(SHARED_SRC)
 	clpru -z $(LINKER_CMD_SRC) -i $(CGT_PRU_ROOT)lib -o $(PRU0_FW_OUTPUT) \
 		$(OBJ_FILES) $(LIBS)
 
+PRU0 = remoteproc1
+PRU0_DEV_STATE = /sys/class/remoteproc/$(PRU0)/state
+PRU0_DEV_FIRMWARE = /sys/class/remoteproc/$(PRU0)/firmware
+FIRMWARE_ROOT = /lib/firmware/
 PHONY += pru0_setup
-pru0_setup:
+pru0_setup: is_root
 	@config-pin P8_11 pruout
 	@config-pin P8_15 pruin
 	@config-pin P8_12 pruout
@@ -60,29 +72,24 @@ TESTS_SRC = \
 	$(TESTS_ROOT)switch1_tests.c $(TESTS_ROOT)switch2_tests.c \
 	$(TESTS_ROOT)cycle_timer_tests.c $(TESTS_ROOT)debounced_gpi_tests.c \
 	$(TESTS_ROOT)main.c
-TESTS_INCLUDE =  \
+TESTS_INCLUDE = \
 	-I $(ARM_LINUX_ROOT) \
 	-I $(SOURCE_ROOT) \
 	-I $(HARDWARE_DIR) \
 	-I $(SOFTWARE_DIR)
 PHONY += tests
 tests: $(SHARED_SRC) $(TESTS_SRC)
-	mkdir -p output
+	@mkdir -p output
 	gcc $(TESTS_INCLUDE) $(SHARED_SRC) $(TESTS_SRC) -o $(OUTPUT_ROOT)unit_tests
 	./$(OUTPUT_ROOT)unit_tests
 
-PRU0 = remoteproc1
-PRU0_DEV_STATE = /sys/class/remoteproc/$(PRU0)/state
-PRU0_DEV_FIRMWARE = /sys/class/remoteproc/$(PRU0)/firmware
-FIRMWARE_ROOT = /lib/firmware/
 PHONY += install
-install:
-	# TODO: Add root check
+install: is_root
 	@rm -f $(FIRMWARE_ROOT)$(PRU0_FW)
 	@cp $(PRU0_FW_OUTPUT) $(FIRMWARE_ROOT)$(PRU0_FW)
 
 PHONY += clean
 clean:
-	rm output/*
+	rm -f output/*
 
 .PHONY: $(PHONY)

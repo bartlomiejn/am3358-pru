@@ -1,5 +1,4 @@
 EUID := $(shell id -u -r)
-
 PHONY := is_root
 is_root:
 ifneq ($(EUID),0)
@@ -26,10 +25,16 @@ install: is_root
 	@cp setup/boot/uEnv.txt /boot/
 	@cp setup/config_pru.sh /etc/init.d/
 	@chmod +x /etc/init.d/config_pru.sh
+	@update-rc.d config_pru.sh defaults
 	@apt-get update
 	@apt-get install linux-headers-$(shell uname -r)
 	$(MAKE) driver
 	$(MAKE) firmware
 	reboot
+
+PHONY += clean
+clean: is_root
+	cd driver && $(MAKE) clean
+	cd firmware && $(MAKE) clean
 
 .PHONY: $(PHONY)
