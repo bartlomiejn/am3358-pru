@@ -1,6 +1,6 @@
 #Docs: http://elinux.org/Beagleboard:U-boot_partitioning_layout_2.0
 
-uname_r=4.14.79-ti-r87
+uname_r=4.14.71-ti-r80
 #uuid=
 #dtb=
 
@@ -63,4 +63,3 @@ cmdline=coherent_pool=1M net.ifnames=0 quiet
 ##enable Generic eMMC Flasher:
 ##make sure, these tools are installed: dosfstools rsync
 #cmdline=init=/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh
-
