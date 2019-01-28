@@ -2,13 +2,13 @@
 
 ## Overview
 The project consists of two elements:
-- A kernel module which allows to access switch information through a sysfs interface available at `/sys/devices/prusw` 
+- A kernel module which allows to access switch information through a sysfs interface available at `/sys/devices/prusw`
 - PRU0 firmware which measures the time for two switches:
     - First: Time between last state change in ms, -1 if it didn't happen
     - Second: Time for last time when the switch was on, -1 if it didn't happen
-        
+
 Required:
-- `BeagleBone Black rev C` 
+- `BeagleBone Black rev C`
 - `Debian 9.5 2018-10-07 4GB SD IOT` (download link in installation description)
 - Ethernet cable
 - FTDI to TTL [like the one here](https://www.ftdichip.com/Support/Documents/DataSheets/Cables/DS_TTL-232R_RPi.pdf)
@@ -28,5 +28,4 @@ Required:
 6) Access Debian (Credentials: `debian` / `temppwd`): `sudo screen /dev/tty.usbserial-* 115200`
 7) `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; sudo make install`
 8) After reboot, connect first switch to P8_11 and P8_15 and second switch to P8_12 and P8_16
-9) `sudo su; echo start > /sys/class/remoteproc/remoteproc1/state`
-
+9) `sudo make run`
