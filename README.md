@@ -7,7 +7,7 @@ The project consists of two elements:
     - First: Time between last state change in ms, -1 if it didn't happen
     - Second: Time for last time when the switch was on, -1 if it didn't happen
         
-Required hardware and software:
+Required:
 - `BeagleBone Black rev C` 
 - `Debian 9.5 2018-10-07 4GB SD IOT` (download link in installation description)
 - Ethernet cable
@@ -17,22 +17,16 @@ Required hardware and software:
 - Two switches
 
 ## Installation instructions (macOS)
-1) Retrieve the raw disk filename for your SD card
-    - Plug in the SD card in
-    - `diskutil list`
-    - Plug it out
-    - `diskutil list`
-    - The missing disk name is your SD card - it should be something similar to `/dev/diskX`
-    - Accompanying raw disk filename should be `/dev/rdiskX` where X is the same number from the step above
-2) Download `Debian 9.5 2018-10-07 4GB SD IOT`: `wget https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz`
-3) Copy Debian to the SD card
-    - Replace the X from commands below with your SD card number from step 1
+1) Download `Debian 9.5 2018-10-07 4GB SD IOT`: `wget https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz`
+2) Copy Debian to the SD card
+    - Replace the X from commands below with your SD card number `diskutil list`
     - Clear the card: `sudo dd if=/dev/zero of=/dev/rdiskX bs=8192`
     - Copy the image to the card: `xzcat bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz | sudo dd of=/dev/rdiskX`
-4) Insert the SD card into the card slot on the BBB
-5) Power it up while holding the boot button
-6) [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial)
-7) Access Debian (Credentials: `debian` / `temppwd`): `sudo screen /dev/tty.usbserial-* 115200`
-8) `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch; cd /home/debian/pru-stopwatch; sudo make install`
-10) After reboot, connect first switch to P8_11 and P8_15 and second switch to P8_12 and P8_16
+3) Insert the SD card into the card slot on the BBB
+4) Power it up while holding the boot button
+5) [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial)
+6) Access Debian (Credentials: `debian` / `temppwd`): `sudo screen /dev/tty.usbserial-* 115200`
+7) `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; sudo make install`
+8) After reboot, connect first switch to P8_11 and P8_15 and second switch to P8_12 and P8_16
+9) `sudo echo start > /sys/class/remoteproc/remoteproc1/state`
 
