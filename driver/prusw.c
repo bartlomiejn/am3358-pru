@@ -2,13 +2,10 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/device.h>
-#include <linux/uaccess.h>
 #include <linux/sysfs.h>
 #include <linux/mutex.h>
 #include <linux/string.h>
-#include <linux/remoteproc.h>
 #include <linux/io.h>
-#include <linux/of.h>
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Bartlomiej Nowak");
@@ -31,7 +28,6 @@ typedef enum {
 static struct device* root_dev;
 static struct device_attribute switch1_attr;
 static struct device_attribute switch2_attr;
-static struct rproc *pru0_rproc;
 static void __iomem *pru_mem;
 static uint8_t __iomem *pru_switch1_bit;
 static uint8_t __iomem *pru_switch1_state;
@@ -44,7 +40,6 @@ static int register_root_dev(void);
 static int create_switch1_file(void);
 static int create_switch2_file(void);
 static int remap_prumem(void);
-static int get_pru0_rproc(void);
 static ssize_t switch1_read(
     struct device *dev,
     struct device_attribute *attr,
@@ -79,17 +74,10 @@ static int __init prusw_init(void)
         printk(KERN_INFO "prusw: Failed to map PRU memory");
         goto deinit_prumem;
     }
-    if (get_pru0_rproc())
-    {
-        printk(KERN_INFO "prusw: Failed to retrieve PRU0 rproc handle");
-        goto deinit_rproc;
-    }
     mutex_init(&switch1_mux);
     mutex_init(&switch2_mux);
     printk(KERN_INFO "prusw: Initialized");
     return 0;
-deinit_rproc:
-    iounmap(pru_mem);
 deinit_prumem:
     sysfs_remove_file(&root_dev->kobj, &switch2_attr.attr);
 deinit_attr2:
@@ -189,27 +177,6 @@ static int remap_prumem(void)
     pru_switch2_bit = pru_switch1_state + SWITCH_STATE_LEN;
     pru_switch2_state = pru_switch2_bit + 1;
     return 0;
-}
-
-static int get_pru0_rproc(void)
-{
-    pru0_rproc = rproc_get_by_phandle(0x4a334000);
-    printk(KERN_INFO "rproc_get_by_phandle: trying 0x4a334000");
-    if (pru0_rproc == NULL)
-    {
-        pru0_rproc = rproc_get_by_phandle(0x4a338000);
-        printk(KERN_INFO "rproc_get_by_phandle: previous failed, trying 4a338000");
-    }
-    if (pru0_rproc == NULL)
-    {
-        pru0_rproc = rproc_get_by_phandle(0x9);
-        printk(KERN_INFO "rproc_get_by_phandle: previous failed, trying 0x9");
-    }
-    if (pru0_rproc == NULL)
-    {
-        printk(KERN_INFO "rproc_get_by_phandle: previous failed ");
-    }
-    return -(pru0_rproc == NULL);
 }
 
 module_init(prusw_init);

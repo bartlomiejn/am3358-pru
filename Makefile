@@ -31,7 +31,7 @@ install: is_root
 	$(MAKE) driver
 	$(MAKE) firmware
 	reboot
-
+	
 PHONY += clean
 clean: is_root
 	cd driver && $(MAKE) clean
