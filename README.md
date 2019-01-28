@@ -28,5 +28,5 @@ Required:
 6) Access Debian (Credentials: `debian` / `temppwd`): `sudo screen /dev/tty.usbserial-* 115200`
 7) `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; sudo make install`
 8) After reboot, connect first switch to P8_11 and P8_15 and second switch to P8_12 and P8_16
-9) `sudo echo start > /sys/class/remoteproc/remoteproc1/state`
+9) `sudo su; echo start > /sys/class/remoteproc/remoteproc1/state`
 
