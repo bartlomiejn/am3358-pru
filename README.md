@@ -1,4 +1,4 @@
-# pru-stopwatch
+# am3358-pru
 
 ## Overview
 The project consists of two elements:
@@ -27,6 +27,6 @@ Required:
 4) Power it up while holding the boot button
 5) [Connect the FTDI to TTL cable to the serial port](https://elinux.org/Beagleboard:BeagleBone_Black_Serial)
 6) Access Debian (Credentials: `debian` / `temppwd`): `sudo screen /dev/tty.usbserial-* 115200`
-7) `cd /home/debian/; git clone https://github.com/bartlomiejn/pru-stopwatch; cd pru-stopwatch; sudo make install`
+7) `cd /home/debian/; git clone https://github.com/bartlomiejn/am3358-pru; cd am3358-pru; sudo make install`
 8) After reboot, connect first switch to P8_11 and P8_15 and second switch to P8_12 and P8_16
-9) Get root access and run: `cd /home/debian/pru-stopwatch; make run`
+9) Get root access and run: `cd /home/debian/am3358-pru; make run`
