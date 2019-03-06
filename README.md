@@ -3,9 +3,10 @@
 ## Overview
 The project consists of two elements:
 - A kernel module which allows to access switch information through a sysfs interface available at `/sys/devices/prusw`
-- PRU0 firmware which measures the time for two switches:
+- PRU subsystem Cortex-M firmware which measures the time for two switches:
     - First: Time between last state change in ms, -1 if it didn't happen
     - Second: Time for last time when the switch was on, -1 if it didn't happen
+- Firmware also has a unit test suite that goes covers all of the objects used in code - `make tests` to run
 
 Required:
 - `BeagleBone Black rev C`
