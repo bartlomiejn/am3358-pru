@@ -6,7 +6,8 @@ The project consists of two elements:
 - PRU subsystem Cortex-M firmware which measures the time for two switches:
     - First: Time between last state change in ms, -1 if it didn't happen
     - Second: Time for last time when the switch was on, -1 if it didn't happen
-- Firmware also has a unit test suite that goes covers all of the objects used in code - `make tests` to run
+
+Most of the firmware is unit tested with a minimal unit testing library (`unit_test.h`). `make tests` to run the test suite. The firmware was written with a strictly object-oriented approach.
 
 Required:
 - `BeagleBone Black rev C`
