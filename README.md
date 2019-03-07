@@ -7,7 +7,7 @@ The project consists of two elements:
     - First: Time between last state change in ms, -1 if it didn't happen
     - Second: Time for last time when the switch was on, -1 if it didn't happen
 
-Most of the firmware is unit tested with a minimal unit testing library (`unit_test.h`). `make tests` to run the test suite. The firmware was written with a strictly object-oriented approach.
+Most of the firmware is unit tested with a minimal unit testing library (`unit_test.h`) - `make tests` to run the test suite.
 
 Required:
 - `BeagleBone Black rev C`
