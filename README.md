@@ -1,13 +1,12 @@
 # am3358-pru
 
 ## Overview
-The project consists of two elements:
-- A kernel module which allows to access switch information through a sysfs interface available at `/sys/devices/prusw`
+The project consists of three elements:
+- A kernel module driver with switch information at `/sys/devices/prusw`
 - PRU subsystem Cortex-M firmware which measures the time for two switches:
     - First: Time between last state change in ms, -1 if it didn't happen
     - Second: Time for last time when the switch was on, -1 if it didn't happen
-
-Most of the firmware is unit tested with a minimal unit testing library (`unit_test.h`) - `make tests` to run the test suite.
+- Firmware unit test suite which you can run using `make tests`
 
 Required:
 - `BeagleBone Black rev C`
